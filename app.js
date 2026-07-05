@@ -402,7 +402,7 @@ const LEARN_QUESTIONS = [
   {
     type: "select-card",
     desc: "一條彩帶平分成 10 等分。 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">10</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">10</span></span></span> 條彩帶和 1 條彩帶，哪一個比較長？",
-    speechDesc: "一條彩帶平分成 10 等分。十分之十條彩帶 and 一條彩帶，哪一個比較長？",
+    speechDesc: "一條彩帶平分成 10 等分。十分之十條彩帶和一條彩帶，哪一個比較長？",
     layout: "equals-one-concept",
     den: 10,
     unit: "條",
@@ -622,7 +622,7 @@ const BATTLE_QUESTIONS = [
     id: "BT8",
     type: "select-card",
     desc: "甲彩帶的 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">1</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">2</span></span></span> 和乙彩帶的 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">1</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">2</span></span></span>，哪一條比較長？",
-    speechDesc: "甲彩帶的二分之一 and 乙彩帶的二分之一，哪一條比較長？",
+    speechDesc: "甲彩帶的二分之一和乙彩帶的二分之一，哪一條比較長？",
     layout: "ribbons-different-half",
     options: [
       { id: "jia", text: "甲彩帶比較長" },
@@ -846,7 +846,7 @@ const BATTLE_QUESTIONS = [
     id: "BT25",
     type: "select-card",
     desc: "一條瑞士捲平分成 10 份。 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">10</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">10</span></span></span> 條瑞士捲和 1 條瑞士捲，哪一個比較多？",
-    speechDesc: "一條瑞士捲平分成 10 份。十分之十條瑞士捲 and 一條瑞士捲，哪一個比較多？",
+    speechDesc: "一條瑞士捲平分成 10 份。十分之十條瑞士捲和一條瑞士捲，哪一個比較多？",
     layout: "swissroll-equals-one-10",
     options: [
       { id: "left", text: "十分之十條比較多" },
