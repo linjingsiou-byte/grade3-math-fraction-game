@@ -1594,7 +1594,7 @@ const GameApp = {
       this.workspaceArea.appendChild(this.workspaceOverlay);
     }
 
-    if (q.layout === 'split-unequal-pizza') {
+    if (q.layout === 'split-unequal-pizza' || q.layout === 'split-unequal-pizza-4') {
       this.renderUnequalPizza();
     } else if (q.layout === 'equal-waffle-4') {
       this.renderEqualWaffle();
@@ -1648,6 +1648,9 @@ const GameApp = {
   },
 
   renderUnequalPizza() {
+    const q = GameState.getCurrentQuestion();
+    const is4Pieces = (q.pieces === 4 || q.layout === 'split-unequal-pizza-4' || (q.desc && q.desc.includes('4 塊')));
+
     const container = document.createElement('div');
     container.className = 'level1-container';
 
@@ -1666,48 +1669,99 @@ const GameApp = {
     const ctx = canvas.getContext('2d');
     const cx = 120, cy = 120, r = 100;
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#f0c27b';
-    ctx.fill();
-    ctx.strokeStyle = '#b87333';
-    ctx.lineWidth = 8;
-    ctx.stroke();
+    if (is4Pieces) {
+      // --- 4 塊不平分圓形巧克力披薩 ---
+      // 餅皮底色與巧克力深色邊框
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#f5cf9e';
+      ctx.fill();
+      ctx.strokeStyle = '#794017';
+      ctx.lineWidth = 8;
+      ctx.stroke();
 
-    const angles = [0, Math.PI * 0.4, Math.PI * 0.95];
-    ctx.strokeStyle = '#8b4513';
-    ctx.lineWidth = 4;
-    
-    angles.forEach(a => {
+      // 切成明顯大小不一的 4 塊：45°, 135°, 72°, 108°
+      const angles = [0, Math.PI * 0.25, Math.PI * 1.0, Math.PI * 1.4];
+
+      // 弟弟拿取的其中 1 塊（0 到 45度扇形），標示半透明粉紅陰影
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-      ctx.stroke();
-    });
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r - 4, angles[0], angles[1]);
-    ctx.lineTo(cx, cy);
-    ctx.fillStyle = 'rgba(255, 66, 112, 0.2)';
-    ctx.fill();
-
-    ctx.fillStyle = '#ff4a70';
-    const strawberries = [
-      { x: cx + 40, y: cy + 30 },
-      { x: cx - 40, y: cy + 40 },
-      { x: cx - 20, y: cy - 50 }
-    ];
-    strawberries.forEach(s => {
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, 8, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r - 4, angles[0], angles[1]);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(214, 62, 138, 0.25)';
       ctx.fill();
-    });
+
+      // 4 條切割線
+      ctx.strokeStyle = '#5a2e12';
+      ctx.lineWidth = 4;
+      angles.forEach(a => {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        ctx.stroke();
+      });
+
+      // 4 塊上各放 1 顆深色巧克力豆配飾
+      const chocoDots = [
+        { x: cx + Math.cos(Math.PI * 0.125) * 55, y: cy + Math.sin(Math.PI * 0.125) * 55 },
+        { x: cx + Math.cos(Math.PI * 0.625) * 55, y: cy + Math.sin(Math.PI * 0.625) * 55 },
+        { x: cx + Math.cos(Math.PI * 1.2) * 55, y: cy + Math.sin(Math.PI * 1.2) * 55 },
+        { x: cx + Math.cos(Math.PI * 1.7) * 55, y: cy + Math.sin(Math.PI * 1.7) * 55 }
+      ];
+      chocoDots.forEach(d => {
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#4a2612';
+        ctx.fill();
+        // 巧克力立體光澤小亮點
+        ctx.beginPath();
+        ctx.arc(d.x - 2.5, d.y - 2.5, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#a87857';
+        ctx.fill();
+      });
+    } else {
+      // --- 3 塊不平分草莓派（原有邏輯）---
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#f0c27b';
+      ctx.fill();
+      ctx.strokeStyle = '#b87333';
+      ctx.lineWidth = 8;
+      ctx.stroke();
+
+      const angles = [0, Math.PI * 0.4, Math.PI * 0.95];
+      ctx.strokeStyle = '#8b4513';
+      ctx.lineWidth = 4;
+      
+      angles.forEach(a => {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        ctx.stroke();
+      });
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r - 4, angles[0], angles[1]);
+      ctx.lineTo(cx, cy);
+      ctx.fillStyle = 'rgba(255, 66, 112, 0.2)';
+      ctx.fill();
+
+      ctx.fillStyle = '#ff4a70';
+      const strawberries = [
+        { x: cx + 40, y: cy + 30 },
+        { x: cx - 40, y: cy + 40 },
+        { x: cx - 20, y: cy - 50 }
+      ];
+      strawberries.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
 
     const optionsArea = document.createElement('div');
     optionsArea.className = 'l1-options-area';
-
-    const q = GameState.getCurrentQuestion();
     q.options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'l1-option-btn';
@@ -3911,10 +3965,11 @@ const GameApp = {
     const leftVisual = document.createElement('div');
     leftVisual.style.fontSize = '2.5rem';
     
-    let lTotal = 9;
-    if (q.leftLabel.includes('/8') || q.rightLabel.includes('/8')) lTotal = 8;
-    if (q.leftLabel.includes('/10') || q.rightLabel.includes('/10')) lTotal = 10;
-    if (q.leftLabel.includes('/12') || q.rightLabel.includes('/12')) lTotal = 12;
+    const getDen = (label, defaultVal = 9) => {
+      const match = label && label.match(/\/(\d+)/);
+      return match ? parseInt(match[1], 10) : defaultVal;
+    };
+    const lTotal = getDen(q.leftLabel) || getDen(q.rightLabel) || 9;
 
     if (q.leftVisual.startsWith('pizza-')) {
       const canvas = document.createElement('canvas');
@@ -3998,23 +4053,41 @@ const GameApp = {
     const cy = canvas.height / 2;
     const r = Math.min(cx, cy) - 5;
 
+    // 1. 底盤餅皮：溫馨柔和烘焙淺金黃底色 (#fcedd8)，與深色底不再混淆
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#42326b';
+    ctx.fillStyle = '#fcedd8';
     ctx.fill();
-    ctx.strokeStyle = '#5a468f';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#c47d2b';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
     const step = (Math.PI * 2) / total;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + step * parts);
-    ctx.lineTo(cx, cy);
-    ctx.fillStyle = '#ff7ebb';
-    ctx.fill();
 
-    ctx.strokeStyle = '#ffffff';
+    // 2. 分子所佔份數（塗色／被拿取的扇形部分）：鮮明草莓甜點粉紅 (#ff4a70)
+    if (parts > 0) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r - 1.5, -Math.PI / 2, -Math.PI / 2 + step * parts);
+      ctx.closePath();
+      ctx.fillStyle = '#ff4a70';
+      ctx.fill();
+
+      // 在塗色區域的每片扇形中心加上精美小果醬點綴，一眼即可直覺數出「有幾片被塗色/幾片分子」
+      for (let i = 0; i < parts; i++) {
+        const midA = -Math.PI / 2 + step * (i + 0.5);
+        const dotR = r * 0.62;
+        const dx = cx + Math.cos(midA) * dotR;
+        const dy = cy + Math.sin(midA) * dotR;
+        ctx.beginPath();
+        ctx.arc(dx, dy, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+    }
+
+    // 3. 所有切等份線（平分線）：俐落可可棕線條，清楚分明
+    ctx.strokeStyle = '#7a481c';
     ctx.lineWidth = 1.5;
     for (let i = 0; i < total; i++) {
       ctx.beginPath();
@@ -4339,16 +4412,18 @@ const GameApp = {
   },
 
   triggerMisconceptionVisuals(q) {
-    if (q.layout === 'split-unequal-pizza') {
+    if (q.layout === 'split-unequal-pizza' || q.layout === 'split-unequal-pizza-4') {
       const canvas = document.querySelector('.l1-visual-canvas');
       if (canvas) {
+        const is4Pieces = (q.pieces === 4 || q.layout === 'split-unequal-pizza-4' || (q.desc && q.desc.includes('4 塊')));
+        const angles = is4Pieces ? [0, Math.PI * 0.25, Math.PI * 1.0, Math.PI * 1.4] : [0, Math.PI * 0.4, Math.PI * 0.95];
+        const normalColor = is4Pieces ? '#5a2e12' : '#8b4513';
         let flash = true;
         const interval = setInterval(() => {
           const ctx = canvas.getContext('2d');
-          ctx.strokeStyle = flash ? '#ff4a70' : '#8b4513';
+          ctx.strokeStyle = flash ? '#ff4a70' : normalColor;
           ctx.lineWidth = 5;
           const cx = 120, cy = 120, r = 100;
-          const angles = [0, Math.PI * 0.4, Math.PI * 0.95];
           angles.forEach(a => {
             ctx.beginPath();
             ctx.moveTo(cx, cy);
@@ -4366,26 +4441,48 @@ const GameApp = {
         const ctx = overlay.getContext('2d');
         const cx = 70, cy = 70, r = 60;
         
-        ctx.clearRect(0,0,140,140);
+        ctx.clearRect(0, 0, 140, 140);
+
+        const getDen = (label, defaultVal = 9) => {
+          const match = label && label.match(/\/(\d+)/);
+          return match ? parseInt(match[1], 10) : defaultVal;
+        };
+        const den = getDen(q.leftLabel) || getDen(q.rightLabel) || 9;
+        const leftParts = Math.round(q.leftVal * den);
+        const rightParts = Math.round(q.rightVal * den);
         
-        let den = q.leftLabel.includes('/8') ? 8 : q.leftLabel.includes('/10') ? 10 : 9;
-        
+        // 畫布底圓
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#fcedd8';
+        ctx.fill();
+        ctx.strokeStyle = '#c47d2b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
         const step = (Math.PI * 2) / den;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + step * Math.round(q.leftVal * den));
-        ctx.lineTo(cx, cy);
-        ctx.fillStyle = 'rgba(0, 240, 181, 0.4)';
-        ctx.fill();
 
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + step * Math.round(q.rightVal * den));
-        ctx.lineTo(cx, cy);
-        ctx.fillStyle = 'rgba(255, 126, 187, 0.3)';
-        ctx.fill();
+        // 較大者與較小者以鮮明半透明色疊合對照 (左: 薄荷綠, 右: 櫻花粉)
+        if (leftParts > 0) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, r - 1, -Math.PI / 2, -Math.PI / 2 + step * leftParts);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(46, 204, 113, 0.45)';
+          ctx.fill();
+        }
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        if (rightParts > 0) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, r - 1, -Math.PI / 2, -Math.PI / 2 + step * rightParts);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(255, 74, 112, 0.45)';
+          ctx.fill();
+        }
+
+        // 切割線
+        ctx.strokeStyle = '#7a481c';
         ctx.lineWidth = 1;
         for (let i = 0; i < den; i++) {
           ctx.beginPath();
@@ -4624,7 +4721,8 @@ const LEVEL_CONFIGS = [
         type: "select-card",
         desc: "爸爸把一個圓形巧克力披薩分成 4 塊，如圖。弟弟拿了其中的 1 塊，是拿了 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">1</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">4</span></span></span> 個披薩嗎？",
         speechDesc: "爸爸把一個圓形巧克力披薩分成 4 塊，如圖。弟弟拿了其中的 1 塊，是拿了四分之一個披薩嗎？",
-        layout: "split-unequal-pizza",
+        layout: "split-unequal-pizza-4",
+        pieces: 4,
         options: [
           { id: "yes", text: "是，因為分成了 4 塊" },
           { id: "no", text: "不是，因為這 4 塊沒有一樣大，所以不是平分" }
