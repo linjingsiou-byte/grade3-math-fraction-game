@@ -1979,7 +1979,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 6 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     const macarons = ['🍪', '🍪', '🍪', '🍪', '🍪', '🍪'];
@@ -2449,7 +2449,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 8 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     const chocolates = Array(8).fill('🍫');
@@ -2512,7 +2512,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 10 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     const jellies = Array(10).fill('🍮');
@@ -2520,8 +2520,6 @@ const GameApp = {
       const itemWrapper = document.createElement('div');
       itemWrapper.className = 'l2-item-wrapper';
       itemWrapper.style.cursor = 'default';
-      itemWrapper.style.width = '60px';
-      itemWrapper.style.height = '60px';
       
       const el = document.createElement('div');
       el.className = 'l2-item';
@@ -2577,7 +2575,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 12 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     const cookies = Array(12).fill('🍪');
@@ -2640,7 +2638,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 9 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     for (let i = 0; i < 9; i++) {
@@ -2710,15 +2708,13 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 6 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     for (let i = 0; i < 6; i++) {
       const itemWrapper = document.createElement('div');
       itemWrapper.className = 'l2-item-wrapper';
       itemWrapper.style.cursor = 'default';
-      itemWrapper.style.width = '60px';
-      itemWrapper.style.height = '60px';
       
       const el = document.createElement('div');
       el.className = 'l2-item';
@@ -3405,7 +3401,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = `📦 完整 1 盒 <span class="l2-badge-sub">（共 ${itemsCount} 格）</span>`;
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     const items = Array(itemsCount).fill(emoji);
@@ -3429,8 +3425,12 @@ const GameApp = {
         const selectedCount = box.querySelectorAll('.l2-item-wrapper.selected').length;
         GameState.selectedItemsCount = selectedCount;
         
+        const fracNumEl = container.querySelector('.l2-frac-num');
         const countNumEl = container.querySelector('.l2-count-num');
         const counterPill = container.querySelector('.l2-counter-pill');
+        if (fracNumEl) {
+          fracNumEl.textContent = selectedCount;
+        }
         if (countNumEl) {
           countNumEl.textContent = selectedCount;
         }
@@ -3450,10 +3450,11 @@ const GameApp = {
 
     container.appendChild(box);
 
-    // 提案 3：點選即時計數膠囊（幫助學生檢核已選數量）
+    // 提案 3：點選即時計數膠囊（垂直分數格式，單位為盒）
+    const unitItem = q.id === 'BT12' ? '顆' : '個';
     const counterPill = document.createElement('div');
     counterPill.className = 'l2-counter-pill';
-    counterPill.innerHTML = `已點選放入：<strong class="l2-count-num">0</strong> / ${itemsCount} 個`;
+    counterPill.innerHTML = `已點選放入：<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num l2-frac-num">0</span></span><span class="frac-row"><span class="frac-cell frac-den">${itemsCount}</span></span></span> 盒（共 <strong class="l2-count-num">0</strong> ${unitItem}）`;
     container.appendChild(counterPill);
 
     this.workspaceArea.appendChild(container);
@@ -3476,7 +3477,7 @@ const GameApp = {
 
     const label = document.createElement('div');
     label.className = 'l2-box-badge';
-    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 6 格）</span>';
+    label.innerHTML = '📦 完整 1 盒';
     box.appendChild(label);
 
     const donuts = ['🍩', '🍩', '🍩', '🍩', '🍩', '🍩'];
@@ -3747,7 +3748,7 @@ const GameApp = {
       ribbon10.style.background = 'linear-gradient(90deg, #ff7ebb, #ffb800)';
       ribbon10.style.borderRadius = '15px';
       ribbon10.style.position = 'relative';
-      ribbon10.innerHTML = `<span style="position:absolute; top:-25px; left:50%; transform:translateX(-50%); font-size:1rem; font-weight:700;">${den}/${den} ${unit}</span>`;
+      ribbon10.innerHTML = `<span style="position:absolute; top:-28px; left:50%; transform:translateX(-50%); font-size:1rem; font-weight:700;"><span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">${den}</span></span><span class="frac-row"><span class="frac-cell frac-den">${den}</span></span></span> ${unit}</span>`;
       
       for (let i = 1; i < den; i++) {
         const line = document.createElement('div');

@@ -1306,8 +1306,15 @@ input:checked + .slider:before {
   box-shadow: 0 4px 14px rgba(255, 66, 112, 0.2);
 }
 
+.l2-counter-pill .fraction {
+  color: #ff4270;
+  font-size: 1.15rem;
+  margin: 0 3px;
+  vertical-align: middle;
+}
+
 .l2-counter-pill .l2-count-num {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
   color: #ff4270;
   font-weight: 900;
 }
