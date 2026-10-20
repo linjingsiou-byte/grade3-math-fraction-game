@@ -140,6 +140,33 @@ const AudioSynth = {
     }
   },
 
+  // 天平沉穩回彈木質音效
+  playScaleThud() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.22);
+
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.22);
+    } catch (e) {
+      console.warn("Failed to play audio", e);
+    }
+  },
+
   // 接力作答音效 (雙聲頓音)
   playPassOn() {
     this.init();
@@ -3801,9 +3828,28 @@ const GameApp = {
     const scaleSys = document.createElement('div');
     scaleSys.className = 'l4-scale-system';
 
+    const pillar = document.createElement('div');
+    pillar.className = 'l4-pillar';
+    const base = document.createElement('div');
+    base.className = 'l4-base';
+
+    // 中央平衡刻度盤 (位於立柱上方、梁的後方)
+    const gauge = document.createElement('div');
+    gauge.className = 'l4-gauge';
+    gauge.innerHTML = `
+      <div class="l4-gauge-mark left"></div>
+      <div class="l4-gauge-mark center" title="平衡基準"></div>
+      <div class="l4-gauge-mark right"></div>
+    `;
+
     const beam = document.createElement('div');
     beam.className = 'l4-beam';
     beam.id = 'scale-beam';
+
+    // 金色立體指針 (附著於橫梁中心，隨梁同軸擺動)
+    const needle = document.createElement('div');
+    needle.className = 'l4-beam-needle';
+    beam.appendChild(needle);
 
     const panLeft = document.createElement('div');
     panLeft.className = 'l4-pan-container l4-pan-left';
@@ -3830,15 +3876,12 @@ const GameApp = {
 
     const pivot = document.createElement('div');
     pivot.className = 'l4-pivot';
-    const pillar = document.createElement('div');
-    pillar.className = 'l4-pillar';
-    const base = document.createElement('div');
-    base.className = 'l4-base';
 
-    scaleSys.appendChild(pivot);
-    scaleSys.appendChild(beam);
     scaleSys.appendChild(pillar);
     scaleSys.appendChild(base);
+    scaleSys.appendChild(gauge);
+    scaleSys.appendChild(beam);
+    scaleSys.appendChild(pivot);
 
     const overlayCanvas = document.createElement('canvas');
     overlayCanvas.className = 'l4-overlay-canvas';
@@ -3870,7 +3913,9 @@ const GameApp = {
           GameState.scaleSelectedOp = op;
           this.submitBtn.disabled = false;
           
-          this.tiltScale(op === '<' ? -5 : op === '>' ? 5 : 0);
+          // 點選微傾預覽：左大則左盤微沉(-3.5deg)，右大則右盤微沉(+3.5deg)，相等則水平(0deg)
+          const previewDeg = op === '<' ? 3.5 : op === '>' ? -3.5 : 0;
+          this.tiltScale(previewDeg);
         });
       }
       operatorsArea.appendChild(btn);
@@ -3887,31 +3932,55 @@ const GameApp = {
     const leftVisual = document.createElement('div');
     leftVisual.style.fontSize = '2.5rem';
     
-    const getDen = (label, defaultVal = 9) => {
-      const match = label && label.match(/\/(\d+)/);
-      return match ? parseInt(match[1], 10) : defaultVal;
+    // 安全分母解析：排除預設值阻擋右側標籤分母的 Bug
+    const getDen = (label) => {
+      if (!label) return null;
+      const match = label.match(/\/(\d+)/);
+      return match ? parseInt(match[1], 10) : null;
     };
-    const lTotal = getDen(q.leftLabel) || getDen(q.rightLabel) || 9;
+    const descMatch = q.desc && q.desc.match(/有\s*(\d+)\s*[個顆片份]/);
+    const descTotal = descMatch ? parseInt(descMatch[1], 10) : null;
+    const lTotal = q.den || getDen(q.leftLabel) || getDen(q.rightLabel) || descTotal || 10;
 
-    if (q.leftVisual.startsWith('pizza-')) {
+    const getEmoji = (desc) => {
+      if (!desc) return '🧁';
+      if (desc.includes('水蜜桃') || desc.includes('桃')) return '🍑';
+      if (desc.includes('馬卡龍') || desc.includes('餅乾')) return '🍪';
+      if (desc.includes('巧克力')) return '🍫';
+      if (desc.includes('果凍') || desc.includes('布丁')) return '🍮';
+      if (desc.includes('甜甜圈')) return '🍩';
+      if (desc.includes('糖果')) return '🍬';
+      return '🧁';
+    };
+    const dessertEmoji = getEmoji(q.desc);
+
+    // --- 左盤視覺呈現 ---
+    if (q.leftVisual && q.leftVisual.startsWith('pizza-')) {
       const canvas = document.createElement('canvas');
       canvas.width = 80; canvas.height = 80;
       const parts = Math.round(q.leftVal * lTotal);
       this.drawPizzaOnCanvas(canvas, parts, lTotal);
       leftVisual.appendChild(canvas);
-    } else if (q.leftVisual === 'discrete-5') {
-      const val = Math.round(q.leftVal * lTotal);
-      let emojis = "";
-      for (let i = 0; i < val; i++) emojis += "🍬";
-      leftVisual.textContent = emojis;
-      leftVisual.style.fontSize = '1.3rem';
-      leftVisual.style.maxWidth = '80px';
-      leftVisual.style.wordBreak = 'break-all';
-    } else if (q.leftVisual === 'whole-1') {
+    } else if (q.leftVisual === 'whole-1' || (q.leftLabel && q.leftLabel.includes('盒'))) {
       const canvas = document.createElement('canvas');
-      canvas.width = 80; canvas.height = 60;
-      this.drawBoxedItems(canvas, lTotal, lTotal);
+      canvas.width = 100; canvas.height = 64;
+      const parts = Math.round(q.leftVal * lTotal);
+      this.drawBoxedItems(canvas, parts, lTotal, dessertEmoji);
       leftVisual.appendChild(canvas);
+    } else {
+      const val = Math.round(q.leftVal * lTotal);
+      leftVisual.style.display = 'flex';
+      leftVisual.style.flexWrap = 'wrap';
+      leftVisual.style.justifyContent = 'center';
+      leftVisual.style.gap = '2px';
+      leftVisual.style.maxWidth = '95px';
+      leftVisual.style.fontSize = val > 6 ? '1.25rem' : '1.45rem';
+      leftVisual.style.lineHeight = '1.2';
+      for (let i = 0; i < val; i++) {
+        const itemSpan = document.createElement('span');
+        itemSpan.textContent = dessertEmoji;
+        leftVisual.appendChild(itemSpan);
+      }
     }
     
     const leftDesc = document.createElement('div');
@@ -3920,29 +3989,36 @@ const GameApp = {
     leftContainer.appendChild(leftVisual);
     leftContainer.appendChild(leftDesc);
 
+    // --- 右盤視覺呈現 ---
     const rightVisual = document.createElement('div');
     rightVisual.style.fontSize = '2.5rem';
     
-    if (q.rightVisual.startsWith('pizza-')) {
+    if (q.rightVisual && q.rightVisual.startsWith('pizza-')) {
       const canvas = document.createElement('canvas');
       canvas.width = 80; canvas.height = 80;
       const parts = Math.round(q.rightVal * lTotal);
       this.drawPizzaOnCanvas(canvas, parts, lTotal);
       rightVisual.appendChild(canvas);
-    } else if (q.rightVisual === 'discrete-8') {
-      const val = Math.round(q.rightVal * lTotal);
-      let emojis = "";
-      for (let i = 0; i < val; i++) emojis += "🍬";
-      rightVisual.textContent = emojis;
-      rightVisual.style.fontSize = '1.3rem';
-      rightVisual.style.maxWidth = '80px';
-      rightVisual.style.wordBreak = 'break-all';
-    } else if (q.rightVisual === 'discrete-10') {
+    } else if (q.rightVisual === 'discrete-10' || (q.rightLabel && q.rightLabel.includes('盒'))) {
       const canvas = document.createElement('canvas');
-      canvas.width = 80; canvas.height = 60;
+      canvas.width = 100; canvas.height = 64;
       const parts = Math.round(q.rightVal * lTotal);
-      this.drawBoxedItems(canvas, parts, lTotal);
+      this.drawBoxedItems(canvas, parts, lTotal, dessertEmoji);
       rightVisual.appendChild(canvas);
+    } else {
+      const val = Math.round(q.rightVal * lTotal);
+      rightVisual.style.display = 'flex';
+      rightVisual.style.flexWrap = 'wrap';
+      rightVisual.style.justifyContent = 'center';
+      rightVisual.style.gap = '2px';
+      rightVisual.style.maxWidth = '95px';
+      rightVisual.style.fontSize = val > 6 ? '1.25rem' : '1.45rem';
+      rightVisual.style.lineHeight = '1.2';
+      for (let i = 0; i < val; i++) {
+        const itemSpan = document.createElement('span');
+        itemSpan.textContent = dessertEmoji;
+        rightVisual.appendChild(itemSpan);
+      }
     }
 
     const rightDesc = document.createElement('div');
@@ -3975,7 +4051,7 @@ const GameApp = {
     const cy = canvas.height / 2;
     const r = Math.min(cx, cy) - 5;
 
-    // 1. 底盤餅皮：溫馨柔和烘焙淺金黃底色 (#fcedd8)，與深色底不再混淆
+    // 1. 底盤餅皮：溫馨柔和烘焙淺金黃底色 (#fcedd8)
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fillStyle = '#fcedd8';
@@ -3995,7 +4071,7 @@ const GameApp = {
       ctx.fillStyle = '#ff4a70';
       ctx.fill();
 
-      // 在塗色區域的每片扇形中心加上精美小果醬點綴，一眼即可直覺數出「有幾片被塗色/幾片分子」
+      // 在塗色區域的每片扇形中心加上小果醬點綴，一眼即可數出幾片分子
       for (let i = 0; i < parts; i++) {
         const midA = -Math.PI / 2 + step * (i + 0.5);
         const dotR = r * 0.62;
@@ -4019,41 +4095,80 @@ const GameApp = {
     }
   },
 
-  drawBoxedItems(canvas, selected, total) {
+  drawBoxedItems(canvas, selected, total, emoji = '🧁') {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
 
-    ctx.strokeStyle = '#ffb800';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.strokeRect(5, 5, w - 10, h - 10);
-    ctx.setLineDash([]);
+    // 1. 溫暖焦糖實體禮盒盒身（對齊第二關烘焙木盒質感）
+    const bx = 3, by = 3, bw = w - 6, bh = h - 6, br = 6;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, br);
+    ctx.fillStyle = '#fff9f0';
+    ctx.fill();
+    ctx.strokeStyle = '#8B4513';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
 
-    const cols = total === 12 ? 4 : 5;
-    const rows = total === 12 ? 3 : 2;
-    const cellW = (w - 14) / cols;
-    const cellH = (h - 14) / rows;
+    // 內層細線
+    ctx.beginPath();
+    ctx.roundRect(bx + 2, by + 2, bw - 4, bh - 4, br - 1);
+    ctx.strokeStyle = 'rgba(196, 125, 43, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 2. 自動判斷排版欄列
+    let cols = 5, rows = 2;
+    if (total === 6) { cols = 3; rows = 2; }
+    else if (total === 8) { cols = 4; rows = 2; }
+    else if (total === 9) { cols = 3; rows = 3; }
+    else if (total === 10) { cols = 5; rows = 2; }
+    else if (total === 12) { cols = 4; rows = 3; }
+    else if (total <= 4) { cols = total; rows = 1; }
+
+    const padX = 5;
+    const padY = 5;
+    const availW = bw - padX * 2;
+    const availH = bh - padY * 2;
+    const cellW = availW / cols;
+    const cellH = availH / rows;
+    const itemSize = Math.max(12, Math.floor(Math.min(cellW, cellH) * 0.82));
 
     let drawn = 0;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (drawn >= total) break;
-        const x = 7 + c * cellW + cellW / 2;
-        const y = 7 + r * cellH + cellH / 2;
-
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        const cx = bx + padX + c * cellW + cellW / 2;
+        const cy = by + padY + r * cellH + cellH / 2;
+        const slotR = Math.min(cellW, cellH) * 0.42;
 
         if (drawn < selected) {
-          ctx.fillStyle = '#ffb800';
+          // [已放入點心格]：烘焙紙托 + 點心 emoji
+          ctx.beginPath();
+          ctx.arc(cx, cy, slotR, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffe9b8';
+          ctx.fill();
+          ctx.strokeStyle = '#e0aa3e';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.font = `${itemSize}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(emoji, cx, cy + 1);
         } else {
-          ctx.fillStyle = '#3a2b54';
+          // [等分內襯空格]：虛線紙托槽，清晰展示分母平分總格數
+          ctx.beginPath();
+          ctx.arc(cx, cy, slotR, 0, Math.PI * 2);
+          ctx.fillStyle = '#f0e6da';
+          ctx.fill();
+          ctx.setLineDash([2, 2]);
+          ctx.strokeStyle = '#c4b09c';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+          ctx.setLineDash([]);
         }
-        ctx.fill();
-        ctx.strokeStyle = '#23193a';
-        ctx.lineWidth = 1;
-        ctx.stroke();
 
         drawn++;
       }
@@ -4068,8 +4183,8 @@ const GameApp = {
     if (!beam) return;
 
     beam.style.transform = `rotate(${deg}deg)`;
-    panLeft.style.transform = `rotate(${-deg}deg)`;
-    panRight.style.transform = `rotate(${-deg}deg)`;
+    if (panLeft) panLeft.style.transform = `rotate(${-deg}deg)`;
+    if (panRight) panRight.style.transform = `rotate(${-deg}deg)`;
   },
 
   initDragAndDrop(plate, belt) {
@@ -4236,7 +4351,14 @@ const GameApp = {
         this.showMessage("喵～回答得太棒了！你真有分數魔法天分！", "success");
         if (q.type === 'interactive-scale') {
           const diff = q.leftVal - q.rightVal;
-          this.tiltScale(diff < 0 ? -12 : diff > 0 ? 12 : 0);
+          // 左重 (diff > 0): 左盤下沉 (逆時針 -12deg)
+          // 右重 (diff < 0): 右盤下沉 (順時針 +12deg)
+          // 相等 (diff === 0): 水平平衡 (0deg)
+          const targetDeg = diff > 0 ? -12 : diff < 0 ? 12 : 0;
+          this.tiltScale(targetDeg);
+          setTimeout(() => {
+            AudioSynth.playScaleThud();
+          }, 250);
         }
       } else {
         AudioSynth.playWrong();
@@ -4267,7 +4389,11 @@ const GameApp = {
 
         if (q.type === 'interactive-scale') {
           const diff = q.leftVal - q.rightVal;
-          this.tiltScale(diff < 0 ? -12 : diff > 0 ? 12 : 0);
+          const targetDeg = diff > 0 ? -12 : diff < 0 ? 12 : 0;
+          this.tiltScale(targetDeg);
+          setTimeout(() => {
+            AudioSynth.playScaleThud();
+          }, 250);
         }
 
         const msgText = `🎉 太棒了！${activePName} 答對了，獲得 10 枚金幣！`;
@@ -4365,11 +4491,14 @@ const GameApp = {
         
         ctx.clearRect(0, 0, 140, 140);
 
-        const getDen = (label, defaultVal = 9) => {
-          const match = label && label.match(/\/(\d+)/);
-          return match ? parseInt(match[1], 10) : defaultVal;
+        const getDen = (label) => {
+          if (!label) return null;
+          const match = label.match(/\/(\d+)/);
+          return match ? parseInt(match[1], 10) : null;
         };
-        const den = getDen(q.leftLabel) || getDen(q.rightLabel) || 9;
+        const descMatch = q.desc && q.desc.match(/有\s*(\d+)\s*[個顆片份]/);
+        const descTotal = descMatch ? parseInt(descMatch[1], 10) : null;
+        const den = q.den || getDen(q.leftLabel) || getDen(q.rightLabel) || descTotal || 10;
         const leftParts = Math.round(q.leftVal * den);
         const rightParts = Math.round(q.rightVal * den);
         
@@ -4413,8 +4542,10 @@ const GameApp = {
           ctx.stroke();
         }
       }
-    } else if (q.layout === 'scale-discrete-compare') {
-      this.tiltScale(-12);
+    } else if (q.layout === 'scale-discrete-compare' || q.layout === 'scale-whole-compare') {
+      const diff = q.leftVal - q.rightVal;
+      const targetDeg = diff > 0 ? -12 : diff < 0 ? 12 : 0;
+      this.tiltScale(targetDeg);
     }
   },
 
