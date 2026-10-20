@@ -1978,16 +1978,8 @@ const GameApp = {
     box.style.width = '320px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 6 格）</span>';
     box.appendChild(label);
 
     const macarons = ['🍪', '🍪', '🍪', '🍪', '🍪', '🍪'];
@@ -2451,21 +2443,13 @@ const GameApp = {
     const box = document.createElement('div');
     box.className = 'l2-box';
     box.style.gridTemplateColumns = 'repeat(4, 1fr)';
-    box.style.width = '300px';
-    box.style.padding = '16px';
+    box.style.width = '360px';
+    box.style.padding = '22px 18px 18px 18px';
     box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 8 格）</span>';
     box.appendChild(label);
 
     const chocolates = Array(8).fill('🍫');
@@ -2473,8 +2457,6 @@ const GameApp = {
       const itemWrapper = document.createElement('div');
       itemWrapper.className = 'l2-item-wrapper';
       itemWrapper.style.cursor = 'default';
-      itemWrapper.style.width = '60px';
-      itemWrapper.style.height = '60px';
       
       const el = document.createElement('div');
       el.className = 'l2-item';
@@ -2524,21 +2506,13 @@ const GameApp = {
     const box = document.createElement('div');
     box.className = 'l2-box';
     box.style.gridTemplateColumns = 'repeat(5, 1fr)';
-    box.style.width = '380px';
-    box.style.padding = '16px';
+    box.style.width = '440px';
+    box.style.padding = '22px 18px 18px 18px';
     box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 10 格）</span>';
     box.appendChild(label);
 
     const jellies = Array(10).fill('🍮');
@@ -2597,22 +2571,13 @@ const GameApp = {
     const box = document.createElement('div');
     box.className = 'l2-box';
     box.style.gridTemplateColumns = 'repeat(4, 1fr)';
-    box.style.width = '340px';
-    box.style.height = 'auto';
-    box.style.padding = '16px';
+    box.style.width = '360px';
+    box.style.padding = '22px 18px 18px 18px';
     box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 12 格）</span>';
     box.appendChild(label);
 
     const cookies = Array(12).fill('🍪');
@@ -2620,8 +2585,6 @@ const GameApp = {
       const itemWrapper = document.createElement('div');
       itemWrapper.className = 'l2-item-wrapper';
       itemWrapper.style.cursor = 'default';
-      itemWrapper.style.width = '60px';
-      itemWrapper.style.height = '60px';
       
       const el = document.createElement('div');
       el.className = 'l2-item';
@@ -2671,29 +2634,19 @@ const GameApp = {
     const box = document.createElement('div');
     box.className = 'l2-box';
     box.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    box.style.width = '280px';
-    box.style.padding = '16px';
+    box.style.width = '300px';
+    box.style.padding = '22px 18px 18px 18px';
     box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 9 格）</span>';
     box.appendChild(label);
 
     for (let i = 0; i < 9; i++) {
       const itemWrapper = document.createElement('div');
       itemWrapper.className = 'l2-item-wrapper';
       itemWrapper.style.cursor = 'default';
-      itemWrapper.style.width = '60px';
-      itemWrapper.style.height = '60px';
       
       const el = document.createElement('div');
       el.className = 'l2-item';
@@ -2751,21 +2704,13 @@ const GameApp = {
     const box = document.createElement('div');
     box.className = 'l2-box';
     box.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    box.style.width = '280px';
-    box.style.padding = '16px';
+    box.style.width = '300px';
+    box.style.padding = '22px 18px 18px 18px';
     box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 6 格）</span>';
     box.appendChild(label);
 
     for (let i = 0; i < 6; i++) {
@@ -3453,25 +3398,15 @@ const GameApp = {
     const box = document.createElement('div');
     box.className = 'l2-box';
     box.style.gridTemplateColumns = itemsCount === 10 ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)';
-    box.style.width = itemsCount === 10 ? '450px' : '420px';
-    box.style.height = itemsCount === 10 ? '240px' : '320px';
+    box.style.width = itemsCount === 10 ? '450px' : '390px';
+    box.style.height = 'auto';
+    box.style.padding = '24px 18px 18px 18px';
+    box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = `📦 完整 1 盒 <span class="l2-badge-sub">（共 ${itemsCount} 格）</span>`;
     box.appendChild(label);
-
-    const svgOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svgOverlay.setAttribute('class', 'l2-svg-overlay');
-    box.appendChild(svgOverlay);
 
     const items = Array(itemsCount).fill(emoji);
     items.forEach((itemEmoji, idx) => {
@@ -3494,7 +3429,19 @@ const GameApp = {
         const selectedCount = box.querySelectorAll('.l2-item-wrapper.selected').length;
         GameState.selectedItemsCount = selectedCount;
         
-        this.updateSvgOutline(box, svgOverlay);
+        const countNumEl = container.querySelector('.l2-count-num');
+        const counterPill = container.querySelector('.l2-counter-pill');
+        if (countNumEl) {
+          countNumEl.textContent = selectedCount;
+        }
+        if (counterPill) {
+          if (selectedCount > 0) {
+            counterPill.classList.add('has-selection');
+          } else {
+            counterPill.classList.remove('has-selection');
+          }
+        }
+        
         this.submitBtn.disabled = (selectedCount === 0);
       });
 
@@ -3502,38 +3449,18 @@ const GameApp = {
     });
 
     container.appendChild(box);
+
+    // 提案 3：點選即時計數膠囊（幫助學生檢核已選數量）
+    const counterPill = document.createElement('div');
+    counterPill.className = 'l2-counter-pill';
+    counterPill.innerHTML = `已點選放入：<strong class="l2-count-num">0</strong> / ${itemsCount} 個`;
+    container.appendChild(counterPill);
+
     this.workspaceArea.appendChild(container);
   },
 
   updateSvgOutline(box, svg) {
-    svg.innerHTML = '';
-    const selectedWrappers = box.querySelectorAll('.l2-item-wrapper.selected');
-    if (selectedWrappers.length === 0) return;
-
-    const boxRect = box.getBoundingClientRect();
-    const pad = 4;
-
-    selectedWrappers.forEach(w => {
-      const rect = w.getBoundingClientRect();
-      const relX = rect.left - boxRect.left;
-      const relY = rect.top - boxRect.top;
-      
-      const x = relX - pad;
-      const y = relY - pad;
-      const width = rect.width + pad * 2;
-      const height = rect.height + pad * 2;
-
-      const rectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      rectElement.setAttribute('class', 'l2-group-outline');
-      rectElement.setAttribute('x', x);
-      rectElement.setAttribute('y', y);
-      rectElement.setAttribute('width', width);
-      rectElement.setAttribute('height', height);
-      rectElement.setAttribute('rx', 12);
-      rectElement.setAttribute('ry', 12);
-      
-      svg.appendChild(rectElement);
-    });
+    if (svg) svg.innerHTML = '';
   },
 
   renderDonuts6() {
@@ -3544,18 +3471,12 @@ const GameApp = {
     box.className = 'l2-box';
     box.style.gridTemplateColumns = 'repeat(3, 1fr)';
     box.style.width = '320px';
+    box.style.padding = '22px 18px 18px 18px';
+    box.style.gap = '12px';
 
     const label = document.createElement('div');
-    label.style.position = 'absolute';
-    label.style.top = '-12px';
-    label.style.left = '20px';
-    label.style.background = 'var(--panel-border)';
-    label.style.color = 'var(--text-color)';
-    label.style.padding = '2px 10px';
-    label.style.borderRadius = '10px';
-    label.style.fontSize = '0.85rem';
-    label.style.fontWeight = '700';
-    label.textContent = '1 盒';
+    label.className = 'l2-box-badge';
+    label.innerHTML = '📦 完整 1 盒 <span class="l2-badge-sub">（共 6 格）</span>';
     box.appendChild(label);
 
     const donuts = ['🍩', '🍩', '🍩', '🍩', '🍩', '🍩'];

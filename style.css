@@ -1156,76 +1156,165 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
   margin: auto;
   min-height: 0;
 }
 
+/* 提案 1：外盒實體化——厚實溫潤烘焙禮盒 */
 .l2-box {
-  background: rgba(255, 255, 255, 0.7);
-  border: 3px dashed var(--panel-border);
-  border-radius: var(--border-radius-lg);
-  padding: 24px;
+  background: linear-gradient(145deg, #fffcf7 0%, #faedd9 100%);
+  border: 3.5px solid #a06b3a;
+  border-radius: 18px;
+  padding: 24px 20px 20px 20px;
   display: grid;
-  gap: 16px;
+  gap: 12px;
   position: relative;
   justify-content: center;
   align-items: center;
+  box-shadow: 
+    0 8px 24px rgba(138, 86, 40, 0.16),
+    inset 0 2px 4px rgba(255, 255, 255, 0.9),
+    inset 0 -3px 0 rgba(160, 107, 58, 0.12);
 }
 
-/* 離散量糖果/點心項目 */
+/* 提案 4：標籤語意化——醒目禮盒銘牌（完整 1 盒） */
+.l2-box-badge {
+  position: absolute;
+  top: -15px;
+  left: 20px;
+  background: linear-gradient(135deg, #8d4f24 0%, #5f3211 100%);
+  color: #fffdf9;
+  padding: 4px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(95, 50, 17, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+  z-index: 5;
+}
+
+.l2-box-badge .l2-badge-sub {
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.92;
+  color: #ffe0b2;
+}
+
+/* 提案 2：分母結構化——點心內襯格位（烘焙隔板槽） */
 .l2-item-wrapper {
   position: relative;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 70px;
-  height: 70px;
+  width: 72px;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #dfc9ae;
+  border-radius: 14px;
+  box-shadow: 
+    inset 0 2px 4px rgba(160, 107, 58, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.l2-item-wrapper:hover {
+  transform: translateY(-2px);
+  border-color: #c49969;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(160, 107, 58, 0.15);
 }
 
 .l2-item {
-  font-size: 3rem;
-  transition: filter 0.3s, transform 0.3s;
+  font-size: 2.8rem;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  user-select: none;
 }
 
 .l2-item-wrapper:hover .l2-item {
-  transform: scale(1.15) rotate(5deg);
+  transform: scale(1.1) rotate(4deg);
+}
+
+/* 提案 3：分子視覺化——被點選狀態（草莓粉紅烘焙高亮底色＋立體打勾角標） */
+.l2-item-wrapper.selected {
+  background: linear-gradient(135deg, #ffeef4 0%, #ffd6e4 100%);
+  border-color: #ff4270;
+  box-shadow: 
+    0 0 14px rgba(255, 66, 112, 0.4),
+    inset 0 0 6px rgba(255, 66, 112, 0.2);
+  transform: scale(1.05);
 }
 
 .l2-item-wrapper.selected .l2-item {
-  filter: drop-shadow(0 0 12px var(--accent-color));
-  transform: scale(1.1);
+  transform: scale(1.15);
+  filter: drop-shadow(0 4px 8px rgba(255, 66, 112, 0.35));
 }
 
-/* SVG 虛線分組框 */
-.l2-svg-overlay {
+.l2-item-wrapper.selected::after {
+  content: "✓";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 2;
+  top: -7px;
+  right: -7px;
+  width: 22px;
+  height: 22px;
+  background: #ff4270;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(255, 66, 112, 0.45);
+  border: 2px solid #ffffff;
+  animation: pop-check 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 5;
 }
 
-.l2-group-outline {
-  fill: none;
-  stroke: var(--accent-color);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-dasharray: 6, 6;
-  filter: drop-shadow(0 0 4px var(--accent-glow));
-  transition: all 0.3s ease;
-  animation: stroke-rotate 15s linear infinite;
+@keyframes pop-check {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.25); }
+  100% { transform: scale(1); }
 }
 
-@keyframes stroke-rotate {
-  to {
-    stroke-dashoffset: -100;
-  }
+/* 提案 3：點選即時計數膠囊（幫助學生檢核已選數量） */
+.l2-counter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #e2cbaf;
+  padding: 8px 18px;
+  border-radius: 24px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-color);
+  box-shadow: 0 4px 12px rgba(141, 110, 99, 0.1);
+  transition: all 0.25s ease;
+}
+
+.l2-counter-pill.has-selection {
+  border-color: #ff4270;
+  background: #fff5f8;
+  box-shadow: 0 4px 14px rgba(255, 66, 112, 0.2);
+}
+
+.l2-counter-pill .l2-count-num {
+  font-size: 1.35rem;
+  color: #ff4270;
+  font-weight: 900;
+}
+
+/* SVG 覆蓋層（保留相容，預設隱藏以防虛線干擾） */
+.l2-svg-overlay {
+  display: none;
 }
 
 /* 第二關答案輸入區（當需要輸入個數時） */
