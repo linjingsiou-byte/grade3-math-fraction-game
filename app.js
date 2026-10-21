@@ -3178,75 +3178,147 @@ const GameApp = {
   renderPizzaEqualsOne() {
     const container = document.createElement('div');
     container.className = 'level1-container';
+    container.style.maxWidth = '100%';
 
     const layout = document.createElement('div');
     layout.className = 'l1-split-layout';
+    layout.style.alignItems = 'center';
+    layout.style.gap = '24px';
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
-    visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '15px';
+    visualArea.style.flexDirection = 'row';
+    visualArea.style.alignItems = 'flex-end';
+    visualArea.style.justifyContent = 'center';
+    visualArea.style.gap = '20px';
+    visualArea.style.padding = '8px';
+    visualArea.style.flexWrap = 'wrap';
 
+    // 披薩繪製輔助函數
+    const drawPizzaWithSlice = (canvas, cx, cy, r, isLarge) => {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. 金黃烘焙厚餅皮外圈
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#f5cf9e';
+      ctx.fill();
+      ctx.strokeStyle = '#9c5123';
+      ctx.lineWidth = isLarge ? 8 : 5.5;
+      ctx.stroke();
+
+      // 2. 底層起司 (完整圓)
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - (isLarge ? 4 : 3), 0, Math.PI * 2);
+      ctx.fillStyle = '#fff4bd';
+      ctx.fill();
+
+      // 3. 吃掉的 1/4 個扇形 (0 到 90 度扇形)：鮮明濃郁橘紅起司番茄色
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r - (isLarge ? 4 : 3), 0, Math.PI * 0.5);
+      ctx.closePath();
+      ctx.fillStyle = '#ff9f43';
+      ctx.fill();
+
+      // 4. 香腸配料 (Pepperoni)
+      const pepR = isLarge ? 8 : 5;
+      const pepDots = isLarge
+        ? [
+            { ang: 0.16 * Math.PI, dist: r * 0.45 },
+            { ang: 0.36 * Math.PI, dist: r * 0.52 },
+            { ang: 0.22 * Math.PI, dist: r * 0.72 }
+          ]
+        : [
+            { ang: 0.25 * Math.PI, dist: r * 0.52 }
+          ];
+
+      pepDots.forEach(p => {
+        const px = cx + Math.cos(p.ang) * p.dist;
+        const py = cy + Math.sin(p.ang) * p.dist;
+        ctx.beginPath();
+        ctx.arc(px, py, pepR, 0, Math.PI * 2);
+        ctx.fillStyle = '#d63031';
+        ctx.fill();
+        ctx.strokeStyle = '#991515';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      });
+
+      // 5. 四等分均勻切割線
+      ctx.strokeStyle = '#5a2d0c';
+      ctx.lineWidth = isLarge ? 2.5 : 2;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
+      ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
+      ctx.stroke();
+
+      // 6. 吃掉的 1/4 塊外框加上警示虛線與吃掉標記
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r + 2, 0, Math.PI * 0.5);
+      ctx.closePath();
+      ctx.strokeStyle = '#d32f2f';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+
+    // --- (A) 小華的小披薩 ---
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
-    const canvasA = document.createElement('canvas');
-    canvasA.width = 110; canvasA.height = 110;
-    canvasA.style.border = '2px dashed var(--panel-border)';
-    canvasA.style.borderRadius = '8px';
-    canvasA.style.background = 'rgba(18, 12, 31, 0.4)';
-    const ctxA = canvasA.getContext('2d');
-    
-    ctxA.beginPath();
-    ctxA.arc(55, 55, 45, 0, Math.PI * 2);
-    ctxA.fillStyle = '#ffb84d';
-    ctxA.fill();
-    ctxA.strokeStyle = '#b87333';
-    ctxA.lineWidth = 4;
-    ctxA.stroke();
+    divA.style.background = 'rgba(255, 248, 235, 0.95)';
+    divA.style.border = '2px solid #ffb74d';
+    divA.style.borderRadius = '14px';
+    divA.style.padding = '8px 12px';
+    divA.style.boxShadow = '0 3px 8px rgba(255, 183, 77, 0.2)';
 
-    ctxA.strokeStyle = 'rgba(139, 69, 19, 0.4)';
-    ctxA.lineWidth = 2;
-    ctxA.beginPath();
-    ctxA.moveTo(55, 10); ctxA.lineTo(55, 100);
-    ctxA.moveTo(10, 55); ctxA.lineTo(100, 55);
-    ctxA.stroke();
+    const tagA = document.createElement('div');
+    tagA.innerHTML = '<span style="display:inline-block; background:#ffe0b2; color:#bf360c; font-weight:800; font-size:0.95rem; padding:2px 10px; border-radius:12px; margin-bottom:6px;">🍕 小華的小披薩</span>';
+
+    const canvasA = document.createElement('canvas');
+    canvasA.width = 130;
+    canvasA.height = 130;
+    drawPizzaWithSlice(canvasA, 65, 65, 46, false);
 
     const lblA = document.createElement('div');
-    lblA.style.marginTop = '8px';
+    lblA.style.marginTop = '6px';
     lblA.style.fontWeight = '700';
-    lblA.textContent = '1 個';
+    lblA.style.fontSize = '1.05rem';
+    lblA.style.color = '#5d4037';
+    lblA.innerHTML = '吃了 <span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">1</span></span><span class="frac-row"><span class="frac-cell frac-den">4</span></span></span> 個';
+
+    divA.appendChild(tagA);
     divA.appendChild(canvasA);
     divA.appendChild(lblA);
 
+    // --- (B) 大明的大披薩 ---
     const divB = document.createElement('div');
     divB.style.textAlign = 'center';
-    const canvasB = document.createElement('canvas');
-    canvasB.width = 110; canvasB.height = 110;
-    canvasB.style.border = '2px dashed var(--panel-border)';
-    canvasB.style.borderRadius = '8px';
-    canvasB.style.background = 'rgba(18, 12, 31, 0.4)';
-    const ctxB = canvasB.getContext('2d');
-    
-    ctxB.beginPath();
-    ctxB.arc(55, 55, 45, 0, Math.PI * 2);
-    ctxB.fillStyle = '#ff7ebb';
-    ctxB.fill();
-    ctxB.strokeStyle = '#b87333';
-    ctxB.lineWidth = 4;
-    ctxB.stroke();
+    divB.style.background = 'rgba(255, 240, 245, 0.95)';
+    divB.style.border = '2.5px solid #ff7ebb';
+    divB.style.borderRadius = '16px';
+    divB.style.padding = '10px 14px';
+    divB.style.boxShadow = '0 4px 12px rgba(255, 126, 187, 0.25)';
 
-    ctxB.strokeStyle = 'rgba(139, 69, 19, 0.4)';
-    ctxB.lineWidth = 2;
-    ctxB.beginPath();
-    ctxB.moveTo(55, 10); ctxB.lineTo(55, 100);
-    ctxB.moveTo(10, 55); ctxB.lineTo(100, 55);
-    ctxB.stroke();
+    const tagB = document.createElement('div');
+    tagB.innerHTML = '<span style="display:inline-block; background:#fce4ec; color:#880e4f; font-weight:800; font-size:1.05rem; padding:3px 12px; border-radius:14px; margin-bottom:6px;">🍕 大明的大披薩</span>';
+
+    const canvasB = document.createElement('canvas');
+    canvasB.width = 180;
+    canvasB.height = 180;
+    drawPizzaWithSlice(canvasB, 90, 90, 76, true);
 
     const lblB = document.createElement('div');
-    lblB.style.marginTop = '8px';
-    lblB.style.fontWeight = '700';
-    lblB.innerHTML = '<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">4</span></span><span class="frac-row"><span class="frac-cell frac-den">4</span></span></span> 個';
+    lblB.style.marginTop = '6px';
+    lblB.style.fontWeight = '800';
+    lblB.style.fontSize = '1.15rem';
+    lblB.style.color = '#5d4037';
+    lblB.innerHTML = '吃了 <span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">1</span></span><span class="frac-row"><span class="frac-cell frac-den">4</span></span></span> 個';
+
+    divB.appendChild(tagB);
     divB.appendChild(canvasB);
     divB.appendChild(lblB);
 
