@@ -1060,6 +1060,7 @@ const GameState = {
   isPassOnTurn: false,      // 當前是否為接力答題輪 (搶答答錯後)
   isThinkingPhase: false,   // 是否處於讀題思考倒數期
   battleThinkingTimer: null,// 讀題思考計時器 ID
+  battleAnswerTimer: null,  // 搶答後作答限時 (10 秒) 計時器 ID
   battleQuestionQueue: [],  // 對戰隨機題目陣列
   lockedOptions: [],        // 對戰中已被選錯而鎖定的選項
 
@@ -1105,6 +1106,10 @@ const GameState = {
     if (this.battleThinkingTimer) {
       clearInterval(this.battleThinkingTimer);
       this.battleThinkingTimer = null;
+    }
+    if (this.battleAnswerTimer) {
+      clearInterval(this.battleAnswerTimer);
+      this.battleAnswerTimer = null;
     }
     this.battleQuestionQueue = [];
     this.lockedOptions = [];
@@ -1468,15 +1473,53 @@ const GameApp = {
       });
     }
 
-    // 7. 鍵盤監聽事件 (A 搶答, L 搶答)
+    // 7. 鍵盤監聽事件 (A 搶答, L 搶答, [1][2][3] 選項, Enter/Space 送出或下一題)
     window.addEventListener('keydown', (e) => {
       if (GameState.gameMode !== 'battle') return;
-      if (e.target.tagName === 'INPUT') return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+      // (1) 搶答鍵 (貓咪 A / 狗狗 L)
       if (e.code === 'KeyA') {
         this.handleBuzzerPress('A');
+        return;
       } else if (e.code === 'KeyL') {
         this.handleBuzzerPress('B');
+        return;
+      }
+
+      // (2) 數字快捷鍵：[1], [2], [3] 選取工作區選項
+      if (['Digit1', 'Numpad1'].includes(e.code)) {
+        this.selectOptionByIndex(0);
+        return;
+      } else if (['Digit2', 'Numpad2'].includes(e.code)) {
+        this.selectOptionByIndex(1);
+        return;
+      } else if (['Digit3', 'Numpad3'].includes(e.code)) {
+        this.selectOptionByIndex(2);
+        return;
+      }
+
+      // (3) Enter 鍵：送出答案 或 進入下一題
+      if (['Enter', 'NumpadEnter'].includes(e.code)) {
+        if (!this.nextBtn.classList.contains('hidden')) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.loadNextQuestion();
+        } else if (!this.submitBtn.classList.contains('hidden') && !this.submitBtn.disabled) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.checkAnswer();
+        }
+        return;
+      }
+
+      // (4) 空白鍵：進入下一題
+      if (e.code === 'Space') {
+        if (!this.nextBtn.classList.contains('hidden')) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.loadNextQuestion();
+        }
       }
     });
   },
@@ -1588,7 +1631,7 @@ const GameApp = {
       } else {
         const pName = GameState.currentPlayer === 'A' ? '玩家 A (🐱)' : '玩家 B (🐶)';
         const turnLabel = GameState.isPassOnTurn ? '【接力作答】' : '【搶答作答】';
-        this.footerHintText.textContent = `${turnLabel} 現在由 ${pName} 進行回答！`;
+        this.footerHintText.textContent = `${turnLabel} 現在由 ${pName} 回答（可按數字鍵 [1][2][3] 選選項，按 Enter 送出）！`;
       }
     }
   },
@@ -1600,15 +1643,23 @@ const GameApp = {
     }
   },
 
-  startBattleThinkingCountdown(durationSec = 2.5) {
+  clearBattleAnswerTimer() {
+    if (GameState.battleAnswerTimer) {
+      clearInterval(GameState.battleAnswerTimer);
+      GameState.battleAnswerTimer = null;
+    }
+  },
+
+  startBattleThinkingCountdown(durationSec = 3.0) {
     this.clearBattleThinkingTimer();
+    this.clearBattleAnswerTimer();
 
     GameState.isThinkingPhase = true;
     GameState.buzzerLocked = true;
     this.workspaceArea.style.pointerEvents = 'none'; // 讀題期間鎖定選項操作
 
     if (this.battleStatusBar) {
-      this.battleStatusBar.classList.remove('hidden', 'ready', 'winner');
+      this.battleStatusBar.classList.remove('hidden', 'ready', 'winner', 'warning');
       if (this.battleStatusIcon) this.battleStatusIcon.textContent = '⏳';
       if (this.battleStatusText) {
         this.battleStatusText.innerHTML = `仔細看題思考中... <strong id="battle-status-timer">${durationSec.toFixed(1)}</strong> 秒後開放搶答！`;
@@ -1616,6 +1667,7 @@ const GameApp = {
       if (this.battleStatusProgressFill) {
         this.battleStatusProgressFill.style.transition = 'none';
         this.battleStatusProgressFill.style.width = '0%';
+        this.battleStatusProgressFill.style.background = 'linear-gradient(90deg, #FFB800, #FF7EBB)';
       }
     }
 
@@ -1664,6 +1716,145 @@ const GameApp = {
     this.updateStatusUI();
   },
 
+  startBattleAnswerCountdown(durationSec = 10) {
+    this.clearBattleAnswerTimer();
+    this.clearBattleThinkingTimer();
+
+    const activePName = GameState.currentPlayer === 'A' ? '玩家 A (🐱 貓咪)' : '玩家 B (🐶 狗狗)';
+    const turnTitle = GameState.isPassOnTurn ? '🔄【接力作答】' : '🎉【搶答作答】';
+
+    if (this.battleStatusBar) {
+      this.battleStatusBar.className = 'battle-status-bar winner';
+      if (this.battleStatusIcon) this.battleStatusIcon.textContent = '⏱️';
+      if (this.battleStatusText) {
+        this.battleStatusText.innerHTML = `${turnTitle} <strong>${activePName} 請作答！</strong> 剩餘時間：<strong id="battle-answer-timer">${durationSec.toFixed(1)}</strong> 秒（可按 [1][2][3] 選項）`;
+      }
+      if (this.battleStatusProgressFill) {
+        this.battleStatusProgressFill.style.transition = 'none';
+        this.battleStatusProgressFill.style.width = '100%';
+        this.battleStatusProgressFill.style.background = 'linear-gradient(90deg, #FFB800, #FF5252)';
+      }
+    }
+
+    this.updateStatusUI();
+
+    const totalMs = durationSec * 1000;
+    const intervalMs = 100;
+    let remainingMs = totalMs;
+
+    GameState.battleAnswerTimer = setInterval(() => {
+      remainingMs -= intervalMs;
+      const remainingSec = Math.max(0, remainingMs / 1000);
+      const percent = Math.max(0, (remainingMs / totalMs) * 100);
+
+      const timerEl = document.getElementById('battle-answer-timer');
+      if (timerEl) {
+        timerEl.textContent = remainingSec.toFixed(1);
+      }
+
+      if (this.battleStatusProgressFill) {
+        this.battleStatusProgressFill.style.transition = 'width 0.1s linear';
+        this.battleStatusProgressFill.style.width = `${percent}%`;
+      }
+
+      // 剩餘 3 秒以內進入緊急警告震動狀態
+      if (remainingSec <= 3.0 && remainingSec > 0) {
+        if (this.battleStatusBar && !this.battleStatusBar.classList.contains('warning')) {
+          this.battleStatusBar.classList.add('warning');
+        }
+      }
+
+      if (remainingMs <= 0) {
+        this.clearBattleAnswerTimer();
+        this.handleAnswerTimeout();
+      }
+    }, intervalMs);
+  },
+
+  handleAnswerTimeout() {
+    AudioSynth.playWrong();
+    const q = GameState.getCurrentQuestion();
+    const activePName = GameState.currentPlayer === 'A' ? '玩家 A (🐱)' : '玩家 B (🐶)';
+    const opponentP = GameState.currentPlayer === 'A' ? 'B' : 'A';
+    const opponentPName = opponentP === 'A' ? '玩家 A (🐱)' : '玩家 B (🐶)';
+
+    if (!GameState.isPassOnTurn) {
+      // 第一次作答超時 ➡️ 轉交接力
+      AudioSynth.playPassOn();
+      GameState.isPassOnTurn = true;
+      GameState.currentPlayer = opponentP;
+      this.updateStatusUI();
+      this.renderWorkspace(q);
+      this.workspaceArea.style.pointerEvents = 'auto';
+
+      if (opponentP === 'A') {
+        this.buzzerBtnA.classList.add('buzzer-active');
+        this.buzzerBtnB.classList.remove('buzzer-active');
+        this.buzzerBtnB.disabled = true;
+        this.buzzerBtnA.disabled = true;
+      } else {
+        this.buzzerBtnB.classList.add('buzzer-active');
+        this.buzzerBtnA.classList.remove('buzzer-active');
+        this.buzzerBtnA.disabled = true;
+        this.buzzerBtnB.disabled = true;
+      }
+
+      const passMsg = `⏰ 作答超時！${activePName} 未在 10 秒內回答，換 ${opponentPName} 接力作答！`;
+      this.showMessage(passMsg, "error");
+      SpeechManager.speak(passMsg);
+
+      this.submitBtn.disabled = true;
+      this.submitBtn.classList.remove('hidden');
+      this.nextBtn.classList.add('hidden');
+
+      // 接力玩家獲得全新 10 秒作答倒數！
+      this.startBattleAnswerCountdown(10);
+    } else {
+      // 接力玩家也超時 ➡️ 雙輸，看迷思概念
+      this.triggerMisconceptionVisuals(q);
+
+      if (this.battleStatusBar) {
+        this.battleStatusBar.className = 'battle-status-bar';
+        if (this.battleStatusIcon) this.battleStatusIcon.textContent = '💡';
+        if (this.battleStatusText) {
+          this.battleStatusText.innerHTML = '💡 <strong>雙方皆作答超時！</strong> 請看解題說明。';
+        }
+      }
+
+      this.buzzerBtnA.disabled = true;
+      this.buzzerBtnB.disabled = true;
+
+      this.showMessage(`⏰ 雙方皆作答超時！${q.misconceptionSpeech}`, "error");
+      SpeechManager.speak(`雙方都超時囉。${q.misconceptionSpeech}`);
+
+      this.submitBtn.classList.add('hidden');
+      this.nextBtn.classList.remove('hidden');
+      this.workspaceArea.style.pointerEvents = 'none';
+    }
+  },
+
+  enhanceWorkspaceWithShortcuts() {
+    if (GameState.gameMode !== 'battle') return;
+    const optionBtns = this.workspaceArea.querySelectorAll('.l1-option-btn, .l4-op-btn');
+    optionBtns.forEach((btn, idx) => {
+      if (idx < 9 && !btn.querySelector('.key-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'key-badge';
+        badge.textContent = `${idx + 1}`;
+        btn.insertBefore(badge, btn.firstChild);
+      }
+    });
+  },
+
+  selectOptionByIndex(idx) {
+    if (GameState.gameMode !== 'battle') return;
+    if (!GameState.currentPlayer || GameState.isThinkingPhase) return;
+    const optionBtns = Array.from(this.workspaceArea.querySelectorAll('.l1-option-btn, .l4-op-btn'));
+    if (optionBtns[idx] && !optionBtns[idx].disabled && !optionBtns[idx].classList.contains('disabled')) {
+      optionBtns[idx].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    }
+  },
+
   updateBuzzerButtonsState(state) {
     if (!this.buzzerBtnA || !this.buzzerBtnB) return;
 
@@ -1691,6 +1882,7 @@ const GameApp = {
 
   loadQuestion() {
     this.clearBattleThinkingTimer();
+    this.clearBattleAnswerTimer();
     const q = GameState.getCurrentQuestion();
     
     GameState.selectedOption = null;
@@ -1717,7 +1909,7 @@ const GameApp = {
       if (this.workspaceOverlay) this.workspaceOverlay.classList.add('hidden');
       this.buzzerBtnA.classList.remove('hidden');
       this.buzzerBtnB.classList.remove('hidden');
-      this.startBattleThinkingCountdown(2.5);
+      this.startBattleThinkingCountdown(3.0);
     } else {
       if (this.battleStatusBar) this.battleStatusBar.classList.add('hidden');
       this.workspaceArea.style.pointerEvents = 'auto';
@@ -1780,15 +1972,6 @@ const GameApp = {
     // 解鎖工作區操作權限
     this.workspaceArea.style.pointerEvents = 'auto';
 
-    if (this.battleStatusBar) {
-      this.battleStatusBar.className = 'battle-status-bar winner';
-      const pName = player === 'A' ? '玩家 A (🐱 貓咪)' : '玩家 B (🐶 狗狗)';
-      if (this.battleStatusIcon) this.battleStatusIcon.textContent = '🎉';
-      if (this.battleStatusText) {
-        this.battleStatusText.innerHTML = `🎉 <strong>${pName} 搶得作答權！</strong> 請在下方工作區點選操作進行回答！`;
-      }
-    }
-
     this.buzzerBtnA.classList.remove('ready-to-buzz');
     this.buzzerBtnB.classList.remove('ready-to-buzz');
 
@@ -1803,6 +1986,9 @@ const GameApp = {
     }
 
     this.updateStatusUI();
+
+    // 啟動作答 10 秒倒數計時！
+    this.startBattleAnswerCountdown(10);
 
     const announceMsg = player === 'A' ? '玩家 A 搶答成功！請作答。' : '玩家 B 搶答成功！請作答。';
     this.showMessage(`⚡ ${announceMsg}`, "info");
@@ -1865,6 +2051,10 @@ const GameApp = {
       this.renderRibbonsEqualsOne9();
     } else if (q.layout === 'swissroll-equals-one-10') {
       this.renderSwissRollEqualsOne10();
+    }
+
+    if (GameState.gameMode === 'battle') {
+      this.enhanceWorkspaceWithShortcuts();
     }
   },
 
@@ -4510,6 +4700,7 @@ const GameApp = {
   // ==========================================
   checkAnswer() {
     if (this.submitBtn.classList.contains('hidden')) return; // 防止重複送出答案
+    this.clearBattleAnswerTimer(); // 送出答案即刻清除限時倒數
     const q = GameState.getCurrentQuestion();
     let isCorrect = false;
 
@@ -4645,6 +4836,9 @@ const GameApp = {
           this.submitBtn.disabled = true;
           this.submitBtn.classList.remove('hidden');
           this.nextBtn.classList.add('hidden');
+
+          // 接力玩家獲得全新的 10 秒限時作答倒數！
+          this.startBattleAnswerCountdown(10);
         } else {
           this.triggerMisconceptionVisuals(q);
 
@@ -4768,6 +4962,7 @@ const GameApp = {
     this.nextBtn.classList.add('hidden');
     SpeechManager.stop();
     this.clearBattleThinkingTimer();
+    this.clearBattleAnswerTimer();
     
     const overlay = document.getElementById('scale-overlay');
     if (overlay) overlay.style.display = 'none';
