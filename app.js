@@ -167,6 +167,57 @@ const AudioSynth = {
     }
   },
 
+  // 搶答開放警示音 (清脆叮咚二連音：E5 -> B5 -> E6)
+  playBuzzerOpen() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const notes = [659.25, 987.77, 1318.51];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+        gain.gain.setValueAtTime(0.16, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.35);
+      });
+    } catch (e) {
+      console.warn("Failed to play audio", e);
+    }
+  },
+
+  // 讀題冷卻期偷按無效輕音
+  playSoftClick() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(260, now);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.005, now + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch (e) {
+      console.warn("Failed to play audio", e);
+    }
+  },
+
   // 接力作答音效 (雙聲頓音)
   playPassOn() {
     this.init();
@@ -1007,6 +1058,8 @@ const GameState = {
   buzzerLocked: false,      // 本題是否已被搶答鎖定
   buzzerWinner: null,       // 誰搶答成功
   isPassOnTurn: false,      // 當前是否為接力答題輪 (搶答答錯後)
+  isThinkingPhase: false,   // 是否處於讀題思考倒數期
+  battleThinkingTimer: null,// 讀題思考計時器 ID
   battleQuestionQueue: [],  // 對戰隨機題目陣列
   lockedOptions: [],        // 對戰中已被選錯而鎖定的選項
 
@@ -1048,6 +1101,11 @@ const GameState = {
     this.buzzerLocked = false;
     this.buzzerWinner = null;
     this.isPassOnTurn = false;
+    this.isThinkingPhase = false;
+    if (this.battleThinkingTimer) {
+      clearInterval(this.battleThinkingTimer);
+      this.battleThinkingTimer = null;
+    }
     this.battleQuestionQueue = [];
     this.lockedOptions = [];
 
@@ -1107,6 +1165,11 @@ const GameApp = {
   buzzerBtnA: null,
   buzzerBtnB: null,
   workspaceOverlay: null,
+  battleStatusBar: null,
+  battleStatusIcon: null,
+  battleStatusText: null,
+  battleStatusTimer: null,
+  battleStatusProgressFill: null,
   
   autoSpeechCb: null,
   
@@ -1164,6 +1227,11 @@ const GameApp = {
     this.buzzerBtnA = document.getElementById('buzzer-btn-A');
     this.buzzerBtnB = document.getElementById('buzzer-btn-B');
     this.workspaceOverlay = document.getElementById('workspace-overlay');
+    this.battleStatusBar = document.getElementById('battle-status-bar');
+    this.battleStatusIcon = document.getElementById('battle-status-icon');
+    this.battleStatusText = document.getElementById('battle-status-text');
+    this.battleStatusTimer = document.getElementById('battle-status-timer');
+    this.battleStatusProgressFill = document.getElementById('battle-status-progress-fill');
     
     this.autoSpeechCb = document.getElementById('auto-speech-cb');
     
@@ -1513,8 +1581,10 @@ const GameApp = {
       const pct = (GameState.battleCurrentRound / GameState.battleTotalRounds) * 100;
       this.progressFill.style.width = `${pct}%`;
 
-      if (!GameState.buzzerLocked) {
-        this.footerHintText.textContent = "⚡ 雙方準備... 請按 A 鍵或 L 鍵進行魔法搶答！";
+      if (GameState.isThinkingPhase) {
+        this.footerHintText.textContent = "⏳ 仔細看題思考中... 倒數結束前請先不要按按鈕喔！";
+      } else if (!GameState.buzzerLocked) {
+        this.footerHintText.textContent = "⚡ 搶答已開放！請按 A 鍵 (🐱) 或 L 鍵 (🐶) 進行魔法搶答！";
       } else {
         const pName = GameState.currentPlayer === 'A' ? '玩家 A (🐱)' : '玩家 B (🐶)';
         const turnLabel = GameState.isPassOnTurn ? '【接力作答】' : '【搶答作答】';
@@ -1523,7 +1593,104 @@ const GameApp = {
     }
   },
 
+  clearBattleThinkingTimer() {
+    if (GameState.battleThinkingTimer) {
+      clearInterval(GameState.battleThinkingTimer);
+      GameState.battleThinkingTimer = null;
+    }
+  },
+
+  startBattleThinkingCountdown(durationSec = 2.5) {
+    this.clearBattleThinkingTimer();
+
+    GameState.isThinkingPhase = true;
+    GameState.buzzerLocked = true;
+    this.workspaceArea.style.pointerEvents = 'none'; // 讀題期間鎖定選項操作
+
+    if (this.battleStatusBar) {
+      this.battleStatusBar.classList.remove('hidden', 'ready', 'winner');
+      if (this.battleStatusIcon) this.battleStatusIcon.textContent = '⏳';
+      if (this.battleStatusText) {
+        this.battleStatusText.innerHTML = `仔細看題思考中... <strong id="battle-status-timer">${durationSec.toFixed(1)}</strong> 秒後開放搶答！`;
+      }
+      if (this.battleStatusProgressFill) {
+        this.battleStatusProgressFill.style.transition = 'none';
+        this.battleStatusProgressFill.style.width = '0%';
+      }
+    }
+
+    this.updateBuzzerButtonsState('cooling');
+
+    const totalMs = durationSec * 1000;
+    const intervalMs = 100;
+    let elapsedMs = 0;
+
+    GameState.battleThinkingTimer = setInterval(() => {
+      elapsedMs += intervalMs;
+      const remainingSec = Math.max(0, (totalMs - elapsedMs) / 1000);
+      const percent = Math.min(100, (elapsedMs / totalMs) * 100);
+
+      const timerEl = document.getElementById('battle-status-timer');
+      if (timerEl) {
+        timerEl.textContent = remainingSec.toFixed(1);
+      }
+      if (this.battleStatusProgressFill) {
+        this.battleStatusProgressFill.style.transition = 'width 0.1s linear';
+        this.battleStatusProgressFill.style.width = `${percent}%`;
+      }
+
+      if (elapsedMs >= totalMs) {
+        this.clearBattleThinkingTimer();
+        this.onThinkingPhaseComplete();
+      }
+    }, intervalMs);
+  },
+
+  onThinkingPhaseComplete() {
+    GameState.isThinkingPhase = false;
+    GameState.buzzerLocked = false;
+
+    AudioSynth.playBuzzerOpen();
+
+    if (this.battleStatusBar) {
+      this.battleStatusBar.className = 'battle-status-bar ready';
+      if (this.battleStatusIcon) this.battleStatusIcon.textContent = '⚡';
+      if (this.battleStatusText) {
+        this.battleStatusText.innerHTML = '⚡ <strong>搶答開始！</strong>快按下搶答按鈕（貓咪 A / 狗狗 L）！';
+      }
+    }
+
+    this.updateBuzzerButtonsState('ready');
+    this.updateStatusUI();
+  },
+
+  updateBuzzerButtonsState(state) {
+    if (!this.buzzerBtnA || !this.buzzerBtnB) return;
+
+    if (state === 'cooling') {
+      this.buzzerBtnA.disabled = false;
+      this.buzzerBtnB.disabled = false;
+      this.buzzerBtnA.className = 'buzzer-btn player-A cooling';
+      this.buzzerBtnB.className = 'buzzer-btn player-B cooling';
+      this.buzzerBtnA.innerHTML = `<span class="buzzer-emoji">🐱</span><span class="buzzer-text">讀題中<br><span class="key-hint">請先思考</span></span>`;
+      this.buzzerBtnB.innerHTML = `<span class="buzzer-emoji">🐶</span><span class="buzzer-text">讀題中<br><span class="key-hint">請先思考</span></span>`;
+    } else if (state === 'ready') {
+      this.buzzerBtnA.disabled = false;
+      this.buzzerBtnB.disabled = false;
+      this.buzzerBtnA.className = 'buzzer-btn player-A ready-to-buzz';
+      this.buzzerBtnB.className = 'buzzer-btn player-B ready-to-buzz';
+      this.buzzerBtnA.innerHTML = `<span class="buzzer-emoji">🐱</span><span class="buzzer-text">⚡ 快搶答！<br><span class="key-hint">(按 A)</span></span>`;
+      this.buzzerBtnB.innerHTML = `<span class="buzzer-emoji">🐶</span><span class="buzzer-text">⚡ 快搶答！<br><span class="key-hint">(按 L)</span></span>`;
+    } else if (state === 'default') {
+      this.buzzerBtnA.className = 'buzzer-btn player-A';
+      this.buzzerBtnB.className = 'buzzer-btn player-B';
+      this.buzzerBtnA.innerHTML = `<span class="buzzer-emoji">🐱</span><span class="buzzer-text">搶答<br><span class="key-hint">(按 A)</span></span>`;
+      this.buzzerBtnB.innerHTML = `<span class="buzzer-emoji">🐶</span><span class="buzzer-text">搶答<br><span class="key-hint">(按 L)</span></span>`;
+    }
+  },
+
   loadQuestion() {
+    this.clearBattleThinkingTimer();
     const q = GameState.getCurrentQuestion();
     
     GameState.selectedOption = null;
@@ -1536,23 +1703,27 @@ const GameApp = {
     GameState.buzzerWinner = null;
     GameState.currentPlayer = null;
     GameState.isPassOnTurn = false;
+    GameState.isThinkingPhase = false;
 
     this.submitBtn.disabled = true;
     this.submitBtn.classList.remove('hidden');
     this.nextBtn.classList.add('hidden');
-    this.workspaceArea.style.pointerEvents = 'auto';
     this.hideMessage();
-
-    if (GameState.gameMode === 'battle') {
-      this.workspaceOverlay.classList.remove('hidden');
-      this.buzzerBtnA.disabled = false;
-      this.buzzerBtnB.disabled = false;
-      this.buzzerBtnA.classList.remove('buzzer-active');
-      this.buzzerBtnB.classList.remove('buzzer-active');
-    }
 
     this.questionText.innerHTML = q.desc;
     this.renderWorkspace(q);
+
+    if (GameState.gameMode === 'battle') {
+      if (this.workspaceOverlay) this.workspaceOverlay.classList.add('hidden');
+      this.buzzerBtnA.classList.remove('hidden');
+      this.buzzerBtnB.classList.remove('hidden');
+      this.startBattleThinkingCountdown(2.5);
+    } else {
+      if (this.battleStatusBar) this.battleStatusBar.classList.add('hidden');
+      this.workspaceArea.style.pointerEvents = 'auto';
+      this.buzzerBtnA.classList.add('hidden');
+      this.buzzerBtnB.classList.add('hidden');
+    }
 
     if (GameState.autoSpeech) {
       setTimeout(() => {
@@ -1585,8 +1756,20 @@ const GameApp = {
   // ==========================================
   handleBuzzerPress(player) {
     if (GameState.gameMode !== 'battle') return;
-    if (GameState.buzzerLocked) return;
+    if (GameState.buzzerLocked && !GameState.isThinkingPhase) return;
     if (GameState.isPassOnTurn) return;
+
+    // 若處於讀題思考倒數期，按下按鈕提示「先讀題思考喔！」
+    if (GameState.isThinkingPhase) {
+      AudioSynth.playSoftClick();
+      const btn = player === 'A' ? this.buzzerBtnA : this.buzzerBtnB;
+      if (btn) {
+        btn.classList.add('buzzer-shake');
+        setTimeout(() => btn.classList.remove('buzzer-shake'), 400);
+      }
+      this.showMessage("👀 請先讀題思考喔！倒數結束後才能搶答！", "info");
+      return;
+    }
 
     AudioSynth.playBuzzerSuccess();
     
@@ -1594,13 +1777,28 @@ const GameApp = {
     GameState.buzzerWinner = player;
     GameState.currentPlayer = player;
 
-    this.workspaceOverlay.classList.add('hidden');
+    // 解鎖工作區操作權限
+    this.workspaceArea.style.pointerEvents = 'auto';
+
+    if (this.battleStatusBar) {
+      this.battleStatusBar.className = 'battle-status-bar winner';
+      const pName = player === 'A' ? '玩家 A (🐱 貓咪)' : '玩家 B (🐶 狗狗)';
+      if (this.battleStatusIcon) this.battleStatusIcon.textContent = '🎉';
+      if (this.battleStatusText) {
+        this.battleStatusText.innerHTML = `🎉 <strong>${pName} 搶得作答權！</strong> 請在下方工作區點選操作進行回答！`;
+      }
+    }
+
+    this.buzzerBtnA.classList.remove('ready-to-buzz');
+    this.buzzerBtnB.classList.remove('ready-to-buzz');
 
     if (player === 'A') {
       this.buzzerBtnA.classList.add('buzzer-active');
+      this.buzzerBtnA.innerHTML = `<span class="buzzer-emoji">🐱</span><span class="buzzer-text">作答中！<br><span class="key-hint">請回答</span></span>`;
       this.buzzerBtnB.disabled = true;
     } else {
       this.buzzerBtnB.classList.add('buzzer-active');
+      this.buzzerBtnB.innerHTML = `<span class="buzzer-emoji">🐶</span><span class="buzzer-text">作答中！<br><span class="key-hint">請回答</span></span>`;
       this.buzzerBtnA.disabled = true;
     }
 
@@ -1616,10 +1814,6 @@ const GameApp = {
   // ==========================================
   renderWorkspace(q) {
     this.workspaceArea.innerHTML = '';
-    
-    if (GameState.gameMode === 'battle') {
-      this.workspaceArea.appendChild(this.workspaceOverlay);
-    }
 
     if (q.layout === 'split-unequal-pizza' || q.layout === 'split-unequal-pizza-4') {
       this.renderUnequalPizza();
@@ -4422,6 +4616,15 @@ const GameApp = {
           this.updateStatusUI();
 
           this.renderWorkspace(q);
+          this.workspaceArea.style.pointerEvents = 'auto'; // 接力玩家可直接作答
+
+          if (this.battleStatusBar) {
+            this.battleStatusBar.className = 'battle-status-bar winner';
+            if (this.battleStatusIcon) this.battleStatusIcon.textContent = '🔄';
+            if (this.battleStatusText) {
+              this.battleStatusText.innerHTML = `🔄 <strong>接力作答！</strong> ${activePName} 答錯，換 <strong>${opponentPName}</strong> 進行回答！`;
+            }
+          }
           
           if (opponentP === 'A') {
             this.buzzerBtnA.classList.add('buzzer-active');
@@ -4444,6 +4647,14 @@ const GameApp = {
           this.nextBtn.classList.add('hidden');
         } else {
           this.triggerMisconceptionVisuals(q);
+
+          if (this.battleStatusBar) {
+            this.battleStatusBar.className = 'battle-status-bar';
+            if (this.battleStatusIcon) this.battleStatusIcon.textContent = '💡';
+            if (this.battleStatusText) {
+              this.battleStatusText.innerHTML = '💡 <strong>雙方都答錯囉！</strong> 請看解題說明。';
+            }
+          }
 
           this.buzzerBtnA.disabled = true;
           this.buzzerBtnB.disabled = true;
@@ -4556,6 +4767,7 @@ const GameApp = {
     if (this.nextBtn.classList.contains('hidden')) return; // 防止重複點選下一題
     this.nextBtn.classList.add('hidden');
     SpeechManager.stop();
+    this.clearBattleThinkingTimer();
     
     const overlay = document.getElementById('scale-overlay');
     if (overlay) overlay.style.display = 'none';

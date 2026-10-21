@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@300..700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3.3">
+  <link rel="stylesheet" href="style.css?v=3.4">
 </head>
 <body>
   <!-- 魔法粒子背景容器 -->
@@ -210,6 +210,17 @@
           <div class="message-content">
             <span class="message-icon" id="message-icon">💡</span>
             <span class="message-text" id="message-text">提示訊息</span>
+          </div>
+        </div>
+
+        <!-- 對戰讀題思考與搶答狀態欄 (對戰模式專屬) -->
+        <div id="battle-status-bar" class="battle-status-bar hidden">
+          <div class="battle-status-main">
+            <span class="battle-status-icon" id="battle-status-icon">⏳</span>
+            <span class="battle-status-text" id="battle-status-text">仔細看題思考中... <strong id="battle-status-timer">2.5</strong> 秒後開放搶答！</span>
+          </div>
+          <div class="battle-status-progress">
+            <div id="battle-status-progress-fill" class="battle-status-progress-fill"></div>
           </div>
         </div>
 
