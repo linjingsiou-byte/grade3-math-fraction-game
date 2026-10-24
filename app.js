@@ -429,8 +429,10 @@ const LEARN_QUESTIONS = [
   {
     type: "select-card",
     desc: "下面哪一個正方形紙的塗色部分是 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">2</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">4</span></span></span> 張色紙？",
-    speechDesc: "下面哪一個正方形紙 of 色紙的塗色部分是四分之二張色紙？",
+    speechDesc: "下面哪一個正方形色紙的塗色部分是四分之二張色紙？",
     layout: "select-paper-options",
+    num: 2,
+    den: 4,
     options: [
       { id: "A", text: "圖 A（平分成 4 份，塗色 2 份）" },
       { id: "B", text: "圖 B（分成 4 份但大小不一樣）" }
@@ -886,11 +888,11 @@ const BATTLE_QUESTIONS = [
     layout: "ornament-discrete-9",
     options: [
       { id: "3/9", text: '<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">3</span></span><span class="frac-row"><span class="frac-cell frac-den">9</span></span></span> 盒' },
-      { id: "1/3", text: '<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">1</span></span><span class="frac-row"><span class="frac-cell frac-den">3</span></span></span> 盒' },
-      { id: "both", text: "兩個答案都可以" }
+      { id: "3/6", text: '<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">3</span></span><span class="frac-row"><span class="frac-cell frac-den">6</span></span></span> 盒' },
+      { id: "9/3", text: '<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">9</span></span><span class="frac-row"><span class="frac-cell frac-den">3</span></span></span> 盒' }
     ],
-    answer: "both",
-    misconceptionSpeech: "哇！這題兩個答案都對喔。三個吊飾是九分之三盒；如果每三個分成一組，九個剛好分成三組，它也是三分之一盒喔！"
+    answer: "3/9",
+    misconceptionSpeech: "想一想喔！一盒吊飾全部有 9 個（分母是 9），1 個是九分之一盒，抹茶綠吊飾有 3 個（分子是 3），所以是九分之三盒喔！"
   },
   {
     id: "BT17",
@@ -1675,7 +1677,8 @@ const GameApp = {
 
     // 7. 鍵盤監聽事件 (A 搶答, L 搶答, [1][2][3] 選項, Enter/Space 送出或下一題)
     window.addEventListener('keydown', (e) => {
-      if (GameState.gameMode !== 'battle' && GameState.gameMode !== 'ai-challenge') return;
+      if (!this.playScreen || !this.playScreen.classList.contains('active')) return;
+      if (document.querySelector('.modal.active')) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       // (1) 搶答鍵 (貓咪 A / 狗狗 L，僅限雙人對戰模式)
@@ -1689,7 +1692,7 @@ const GameApp = {
         }
       }
 
-      // (2) 數字快捷鍵：[1], [2], [3] 選取工作區選項
+      // (2) 數字快捷鍵：[1], [2], [3] 選取工作區選項 (全模式通用)
       if (['Digit1', 'Numpad1'].includes(e.code)) {
         this.selectOptionByIndex(0);
         return;
@@ -1805,12 +1808,12 @@ const GameApp = {
 
       this.currentLevelNum.textContent = lvl.levelNum;
       this.levelTitleDisplay.textContent = lvl.name;
-      this.footerHintText.textContent = "操作提示：請點擊或拖曳甜點來回答問題。";
+      this.footerHintText.textContent = "操作提示：請點擊或拖曳甜點（亦可按數字鍵 [1][2][3] 選答、Enter 送出）。";
     } else if (GameState.gameMode === 'ai-challenge') {
       this.levelTitleDisplay.textContent = `拔河對決第 ${GameState.aiRoundsPlayed + 1} / ${GameState.aiQuestionQueue.length} 題`;
       const pct = (GameState.aiRoundsPlayed / GameState.aiQuestionQueue.length) * 100;
       this.progressFill.style.width = `${pct}%`;
-      this.footerHintText.textContent = "操作提示：請仔細看題並選出正確答案，搶在狐狸算出前送出，把聖代往左拉！";
+      this.footerHintText.textContent = "操作提示：請仔細看題（可按 [1][2][3] 選答、Enter 送出），搶在狐狸算出前把聖代往左拉！";
     } else {
       this.scoreA.textContent = GameState.playerScores.A;
       this.scoreB.textContent = GameState.playerScores.B;
@@ -1976,6 +1979,16 @@ const GameApp = {
       durationSec = 8.0 + Math.random() * 2.0; // 8~10s
     }
 
+    // 依題型動態補償操作時間（拖曳數線題 +4.5秒、盒裝連點題 +3.0秒）
+    const currentQ = GameState.getCurrentQuestion();
+    if (currentQ) {
+      if (currentQ.type === 'interactive-drag') {
+        durationSec += 4.5;
+      } else if (currentQ.type === 'interactive-click') {
+        durationSec += 3.0;
+      }
+    }
+
     GameState.aiThinkingTotal = durationSec;
     GameState.aiThinkingElapsed = 0;
 
@@ -2036,6 +2049,9 @@ const GameApp = {
   },
 
   handleAiAnswerCorrect() {
+    this.workspaceArea.style.pointerEvents = 'none';
+    this.submitBtn.classList.add('hidden');
+
     GameState.tugPosition++;
     GameState.aiFoxPulls++;
     this.updateConveyorUI();
@@ -2043,7 +2059,7 @@ const GameApp = {
     AudioSynth.playFoxChuckle();
     AudioSynth.playConveyorMove();
 
-    const msg = "🦊 狐狸店長解出題目了！聖代往狐狸端移動了 1 格！";
+    const msg = "🦊 狐狸店長搶先解出題目了！聖代往狐狸端移動了 1 格！";
     this.showMessage(msg, "error");
     SpeechManager.speak("狐狸算出來囉，聖代被拉過去一格了！");
 
@@ -2079,6 +2095,14 @@ const GameApp = {
   },
 
   nextAiQuestion() {
+    if (GameState.tugPosition <= -5) {
+      this.finishAiChallenge('win');
+      return;
+    }
+    if (GameState.tugPosition >= 5) {
+      this.finishAiChallenge('lose');
+      return;
+    }
     GameState.aiRoundsPlayed++;
     if (GameState.aiRoundsPlayed >= GameState.aiQuestionQueue.length) {
       // 題數打滿結算
@@ -2340,7 +2364,6 @@ const GameApp = {
   },
 
   enhanceWorkspaceWithShortcuts() {
-    if (GameState.gameMode !== 'battle' && GameState.gameMode !== 'ai-challenge') return;
     const optionBtns = this.workspaceArea.querySelectorAll('.l1-option-btn, .l4-op-btn');
     optionBtns.forEach((btn, idx) => {
       if (idx < 9 && !btn.querySelector('.key-badge')) {
@@ -2353,7 +2376,7 @@ const GameApp = {
   },
 
   selectOptionByIndex(idx) {
-    if (GameState.gameMode !== 'battle' && GameState.gameMode !== 'ai-challenge') return;
+    if (this.workspaceArea.style.pointerEvents === 'none') return;
     if (GameState.gameMode === 'battle') {
       if (!GameState.currentPlayer || GameState.isThinkingPhase) return;
     }
@@ -2572,9 +2595,7 @@ const GameApp = {
       this.renderSwissRollEqualsOne10();
     }
 
-    if (GameState.gameMode === 'battle' || GameState.gameMode === 'ai-challenge') {
-      this.enhanceWorkspaceWithShortcuts();
-    }
+    this.enhanceWorkspaceWithShortcuts();
   },
 
   renderUnequalPizza() {
@@ -2809,57 +2830,97 @@ const GameApp = {
   },
 
   renderPaperOptions() {
+    const q = GameState.getCurrentQuestion();
+    const isThreeFourths = (q.num === 3 || (q.desc && q.desc.includes('3')));
+
     const container = document.createElement('div');
     container.className = 'level1-container';
 
     const layout = document.createElement('div');
     layout.className = 'l1-split-layout';
+    layout.style.alignItems = 'center';
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '15px';
+    visualArea.style.justifyContent = 'center';
+    visualArea.style.gap = '25px';
 
+    // --- 圖 A (平分成 4 等分) ---
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
     const canvasA = document.createElement('canvas');
     canvasA.width = 120; canvasA.height = 120;
-    canvasA.style.border = '2px solid #3b2861';
-    canvasA.style.background = '#2a1e45';
+    canvasA.style.border = '2.5px solid #8b4513';
+    canvasA.style.borderRadius = '8px';
+    canvasA.style.background = '#fff8eb';
     const ctxA = canvasA.getContext('2d');
+
+    // 底色
+    ctxA.fillStyle = '#fff8eb';
+    ctxA.fillRect(0, 0, 120, 120);
+
+    // 塗色部分 (依題目需要塗 2 份或 3 份)
     ctxA.fillStyle = '#ff7ebb';
-    ctxA.fillRect(0, 0, 60, 120);
-    ctxA.strokeStyle = '#ffffff';
-    ctxA.lineWidth = 2;
+    if (isThreeFourths) {
+      // 塗 3 份：左上、右上、左下
+      ctxA.fillRect(0, 0, 60, 60);
+      ctxA.fillRect(60, 0, 60, 60);
+      ctxA.fillRect(0, 60, 60, 60);
+    } else {
+      // 塗 2 份：左邊兩格 (半張)
+      ctxA.fillRect(0, 0, 60, 120);
+    }
+
+    // 平分十字格線
+    ctxA.strokeStyle = '#8b4513';
+    ctxA.lineWidth = 2.5;
     ctxA.beginPath();
     ctxA.moveTo(60, 0); ctxA.lineTo(60, 120);
     ctxA.moveTo(0, 60); ctxA.lineTo(120, 60);
     ctxA.stroke();
+
     const lblA = document.createElement('div');
     lblA.style.marginTop = '8px';
+    lblA.style.fontWeight = '800';
+    lblA.style.color = '#5d4037';
     lblA.textContent = '圖 A';
     divA.appendChild(canvasA);
     divA.appendChild(lblA);
 
+    // --- 圖 B (不平分 4 塊) ---
     const divB = document.createElement('div');
     divB.style.textAlign = 'center';
     const canvasB = document.createElement('canvas');
     canvasB.width = 120; canvasB.height = 120;
-    canvasB.style.border = '2px solid #3b2861';
-    canvasB.style.background = '#2a1e45';
+    canvasB.style.border = '2.5px solid #8b4513';
+    canvasB.style.borderRadius = '8px';
+    canvasB.style.background = '#fff8eb';
     const ctxB = canvasB.getContext('2d');
+
+    ctxB.fillStyle = '#fff8eb';
+    ctxB.fillRect(0, 0, 120, 120);
+
     ctxB.fillStyle = '#ff7ebb';
-    ctxB.fillRect(0, 0, 30, 120);
-    ctxB.strokeStyle = '#ffffff';
-    ctxB.lineWidth = 2;
+    if (isThreeFourths) {
+      ctxB.fillRect(0, 0, 75, 120);
+    } else {
+      ctxB.fillRect(0, 0, 30, 120);
+    }
+
+    ctxB.strokeStyle = '#8b4513';
+    ctxB.lineWidth = 2.5;
     ctxB.beginPath();
     ctxB.moveTo(15, 0); ctxB.lineTo(15, 120);
     ctxB.moveTo(30, 0); ctxB.lineTo(30, 120);
     ctxB.moveTo(75, 0); ctxB.lineTo(75, 120);
     ctxB.stroke();
+
     const lblB = document.createElement('div');
     lblB.style.marginTop = '8px';
+    lblB.style.fontWeight = '800';
+    lblB.style.color = '#5d4037';
     lblB.textContent = '圖 B';
     divB.appendChild(canvasB);
     divB.appendChild(lblB);
@@ -2870,7 +2931,6 @@ const GameApp = {
     const optionsArea = document.createElement('div');
     optionsArea.className = 'l1-options-area';
 
-    const q = GameState.getCurrentQuestion();
     q.options.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'l1-option-btn';
@@ -3206,6 +3266,7 @@ const GameApp = {
 
     const layout = document.createElement('div');
     layout.className = 'l1-split-layout';
+    layout.style.alignItems = 'center';
 
     const visualArea = document.createElement('div');
     visualArea.className = 'l1-visual-area';
@@ -3219,22 +3280,26 @@ const GameApp = {
     const ctx = canvas.getContext('2d');
     const left = 40, top = 40, size = 160;
 
-    ctx.fillStyle = '#2a1e45';
+    // 溫暖淺米黃底色
+    ctx.fillStyle = '#fff8eb';
     ctx.fillRect(left, top, size, size);
 
+    // 塗色 3 塊 (左上、右上、左下)
     ctx.fillStyle = '#ff7ebb';
     ctx.fillRect(left, top, 80, 80);
     ctx.fillRect(left + 80, top, 80, 80);
     ctx.fillRect(left, top + 80, 80, 80);
 
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
+    // 分割十字線
+    ctx.strokeStyle = '#8b4513';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(left + 80, top); ctx.lineTo(left + 80, top + size);
     ctx.moveTo(left, top + 80); ctx.lineTo(left + size, top + 80);
     ctx.stroke();
 
-    ctx.strokeStyle = '#3b2861';
+    // 焦糖深棕外框
+    ctx.strokeStyle = '#8b4513';
     ctx.lineWidth = 4;
     ctx.strokeRect(left, top, size, size);
 
@@ -3275,26 +3340,33 @@ const GameApp = {
 
     const layout = document.createElement('div');
     layout.className = 'l1-split-layout';
+    layout.style.alignItems = 'center';
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '15px';
+    visualArea.style.justifyContent = 'center';
+    visualArea.style.gap = '25px';
 
+    // 圖 A (均勻四等份，塗 1 份)
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
     const canvasA = document.createElement('canvas');
     canvasA.width = 120; canvasA.height = 120;
-    canvasA.style.border = '2px solid #3b2861';
-    canvasA.style.background = '#2a1e45';
+    canvasA.style.border = '2.5px solid #8b4513';
+    canvasA.style.borderRadius = '8px';
+    canvasA.style.background = '#fff8eb';
     const ctxA = canvasA.getContext('2d');
     
+    ctxA.fillStyle = '#fff8eb';
+    ctxA.fillRect(0, 0, 120, 120);
+
     ctxA.fillStyle = '#ff7ebb';
     ctxA.fillRect(0, 0, 30, 120);
     
-    ctxA.strokeStyle = '#ffffff';
-    ctxA.lineWidth = 2;
+    ctxA.strokeStyle = '#8b4513';
+    ctxA.lineWidth = 2.5;
     ctxA.beginPath();
     ctxA.moveTo(30, 0); ctxA.lineTo(30, 120);
     ctxA.moveTo(60, 0); ctxA.lineTo(60, 120);
@@ -3303,23 +3375,30 @@ const GameApp = {
     
     const lblA = document.createElement('div');
     lblA.style.marginTop = '8px';
+    lblA.style.fontWeight = '800';
+    lblA.style.color = '#5d4037';
     lblA.textContent = '圖 A';
     divA.appendChild(canvasA);
     divA.appendChild(lblA);
 
+    // 圖 B (不平分 4 塊，塗 1 份)
     const divB = document.createElement('div');
     divB.style.textAlign = 'center';
     const canvasB = document.createElement('canvas');
     canvasB.width = 120; canvasB.height = 120;
-    canvasB.style.border = '2px solid #3b2861';
-    canvasB.style.background = '#2a1e45';
+    canvasB.style.border = '2.5px solid #8b4513';
+    canvasB.style.borderRadius = '8px';
+    canvasB.style.background = '#fff8eb';
     const ctxB = canvasB.getContext('2d');
     
+    ctxB.fillStyle = '#fff8eb';
+    ctxB.fillRect(0, 0, 120, 120);
+
     ctxB.fillStyle = '#ff7ebb';
     ctxB.fillRect(0, 0, 15, 120);
     
-    ctxB.strokeStyle = '#ffffff';
-    ctxB.lineWidth = 2;
+    ctxB.strokeStyle = '#8b4513';
+    ctxB.lineWidth = 2.5;
     ctxB.beginPath();
     ctxB.moveTo(15, 0); ctxB.lineTo(15, 120);
     ctxB.moveTo(30, 0); ctxB.lineTo(30, 120);
@@ -3328,6 +3407,8 @@ const GameApp = {
     
     const lblB = document.createElement('div');
     lblB.style.marginTop = '8px';
+    lblB.style.fontWeight = '800';
+    lblB.style.color = '#5d4037';
     lblB.textContent = '圖 B';
     divB.appendChild(canvasB);
     divB.appendChild(lblB);
@@ -3884,23 +3965,26 @@ const GameApp = {
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
+    visualArea.style.justifyContent = 'center';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '15px';
+    visualArea.style.gap = '25px';
+    visualArea.style.flexWrap = 'wrap';
 
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
     const canvasA = document.createElement('canvas');
     canvasA.width = 110; canvasA.height = 110;
-    canvasA.style.border = '2px dashed var(--panel-border)';
-    canvasA.style.borderRadius = '8px';
-    canvasA.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasA.style.border = '2px solid #c47d2b';
+    canvasA.style.borderRadius = '12px';
+    canvasA.style.background = '#fff8eb';
+    canvasA.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxA = canvasA.getContext('2d');
     
     ctxA.fillStyle = '#ffb3d1';
     ctxA.fillRect(20, 20, 70, 70);
-    ctxA.strokeStyle = '#d63e8a';
-    ctxA.lineWidth = 4;
+    ctxA.strokeStyle = '#8b4513';
+    ctxA.lineWidth = 3;
     ctxA.strokeRect(20, 20, 70, 70);
 
     const lblA = document.createElement('div');
@@ -3914,18 +3998,19 @@ const GameApp = {
     divB.style.textAlign = 'center';
     const canvasB = document.createElement('canvas');
     canvasB.width = 110; canvasB.height = 110;
-    canvasB.style.border = '2px dashed var(--panel-border)';
-    canvasB.style.borderRadius = '8px';
-    canvasB.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasB.style.border = '2px solid #c47d2b';
+    canvasB.style.borderRadius = '12px';
+    canvasB.style.background = '#fff8eb';
+    canvasB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxB = canvasB.getContext('2d');
     
     ctxB.fillStyle = '#ffb3d1';
     ctxB.fillRect(20, 20, 70, 70);
-    ctxB.strokeStyle = '#d63e8a';
-    ctxB.lineWidth = 4;
+    ctxB.strokeStyle = '#8b4513';
+    ctxB.lineWidth = 3;
     ctxB.strokeRect(20, 20, 70, 70);
 
-    ctxB.strokeStyle = '#ffffff';
+    ctxB.strokeStyle = '#8b4513';
     ctxB.lineWidth = 1.5;
     for (let i = 1; i < 10; i++) {
       let x = 20 + i * 7;
@@ -3984,33 +4069,41 @@ const GameApp = {
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
+    visualArea.style.justifyContent = 'center';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '10px';
+    visualArea.style.gap = '20px';
+    visualArea.style.flexWrap = 'wrap';
 
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
     const canvasA = document.createElement('canvas');
-    canvasA.width = 120; canvasA.height = 70;
-    canvasA.style.border = '2px dashed var(--panel-border)';
-    canvasA.style.borderRadius = '8px';
-    canvasA.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasA.width = 130; canvasA.height = 70;
+    canvasA.style.border = '2px solid #c47d2b';
+    canvasA.style.borderRadius = '10px';
+    canvasA.style.background = '#fff8eb';
+    canvasA.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxA = canvasA.getContext('2d');
     
-    ctxA.fillStyle = '#2e283b';
-    ctxA.fillRect(10, 25, 100, 20);
+    // 甲彩帶：露出 1/2 部分（塗色），右端未露出部分標示「全長未知 ❓」
     ctxA.fillStyle = '#ff7ebb';
-    ctxA.fillRect(10, 25, 50, 20);
-    ctxA.strokeStyle = '#5a468f';
+    ctxA.fillRect(10, 22, 50, 26);
+    ctxA.fillStyle = '#ffe4b5';
+    ctxA.fillRect(60, 22, 55, 26);
+    ctxA.strokeStyle = '#8b4513';
     ctxA.lineWidth = 2;
-    ctxA.strokeRect(10, 25, 100, 20);
+    ctxA.strokeRect(10, 22, 105, 26);
     ctxA.beginPath();
-    ctxA.moveTo(60, 25); ctxA.lineTo(60, 45);
+    ctxA.moveTo(60, 22); ctxA.lineTo(60, 48);
     ctxA.stroke();
+    // 虛線與問號暗示全長未知
+    ctxA.fillStyle = '#8b4513';
+    ctxA.font = 'bold 12px sans-serif';
+    ctxA.fillText('❓', 82, 39);
 
     const lblA = document.createElement('div');
     lblA.style.marginTop = '8px';
-    lblA.style.fontSize = '0.9rem';
+    lblA.style.fontSize = '0.95rem';
     lblA.style.fontWeight = '700';
     lblA.innerHTML = '甲彩帶的 <span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">1</span></span><span class="frac-row"><span class="frac-cell frac-den">2</span></span></span>';
     divA.appendChild(canvasA);
@@ -4019,26 +4112,31 @@ const GameApp = {
     const divB = document.createElement('div');
     divB.style.textAlign = 'center';
     const canvasB = document.createElement('canvas');
-    canvasB.width = 120; canvasB.height = 70;
-    canvasB.style.border = '2px dashed var(--panel-border)';
-    canvasB.style.borderRadius = '8px';
-    canvasB.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasB.width = 130; canvasB.height = 70;
+    canvasB.style.border = '2px solid #c47d2b';
+    canvasB.style.borderRadius = '10px';
+    canvasB.style.background = '#fff8eb';
+    canvasB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxB = canvasB.getContext('2d');
     
-    ctxB.fillStyle = '#2e283b';
-    ctxB.fillRect(30, 25, 60, 20);
-    ctxB.fillStyle = '#ff7ebb';
-    ctxB.fillRect(30, 25, 30, 20);
-    ctxB.strokeStyle = '#5a468f';
+    // 乙彩帶：露出 1/2 部分（塗色），右端未露出部分標示「全長未知 ❓」
+    ctxB.fillStyle = '#00f0b5';
+    ctxB.fillRect(15, 22, 45, 26);
+    ctxB.fillStyle = '#ffe4b5';
+    ctxB.fillRect(60, 22, 50, 26);
+    ctxB.strokeStyle = '#8b4513';
     ctxB.lineWidth = 2;
-    ctxB.strokeRect(30, 25, 60, 20);
+    ctxB.strokeRect(15, 22, 95, 26);
     ctxB.beginPath();
-    ctxB.moveTo(60, 25); ctxB.lineTo(60, 45);
+    ctxB.moveTo(60, 22); ctxB.lineTo(60, 48);
     ctxB.stroke();
+    ctxB.fillStyle = '#8b4513';
+    ctxB.font = 'bold 12px sans-serif';
+    ctxB.fillText('❓', 78, 39);
 
     const lblB = document.createElement('div');
     lblB.style.marginTop = '8px';
-    lblB.style.fontSize = '0.9rem';
+    lblB.style.fontSize = '0.95rem';
     lblB.style.fontWeight = '700';
     lblB.innerHTML = '乙彩帶的 <span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">1</span></span><span class="frac-row"><span class="frac-cell frac-den">2</span></span></span>';
     divB.appendChild(canvasB);
@@ -4087,55 +4185,83 @@ const GameApp = {
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
+    visualArea.style.justifyContent = 'center';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '15px';
+    visualArea.style.gap = '25px';
+    visualArea.style.flexWrap = 'wrap';
 
+    // 妹妹拿了 4/12 盒（一盒 12 格紙托中裝 4 顆）
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
     
     const boxA = document.createElement('div');
     boxA.className = 'l2-box';
     boxA.style.gridTemplateColumns = 'repeat(4, 1fr)';
-    boxA.style.width = '120px';
+    boxA.style.width = '140px';
     boxA.style.padding = '8px';
-    boxA.style.gap = '4px';
-    boxA.style.height = '90px';
+    boxA.style.gap = '5px';
+    boxA.style.height = '105px';
+    boxA.style.background = '#fff8eb';
+    boxA.style.border = '2px solid #8b4513';
+    boxA.style.borderRadius = '12px';
+    boxA.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
 
     for (let i = 0; i < 12; i++) {
-      const el = document.createElement('div');
-      el.textContent = '🍫';
-      el.style.fontSize = '1.1rem';
-      boxA.appendChild(el);
+      const slot = document.createElement('div');
+      slot.style.display = 'flex';
+      slot.style.alignItems = 'center';
+      slot.style.justifyContent = 'center';
+      slot.style.borderRadius = '6px';
+      slot.style.background = i < 4 ? 'rgba(255, 184, 0, 0.25)' : 'rgba(139, 69, 19, 0.06)';
+      slot.style.border = i < 4 ? '1.5px solid #c47d2b' : '1px dashed #d2b48c';
+      if (i < 4) {
+        slot.textContent = '🍫';
+        slot.style.fontSize = '1.05rem';
+      }
+      boxA.appendChild(slot);
     }
     const lblA = document.createElement('div');
     lblA.style.marginTop = '8px';
     lblA.style.fontWeight = '700';
-    lblA.textContent = '1 盒';
+    lblA.innerHTML = '妹妹：<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">4</span></span><span class="frac-row"><span class="frac-cell frac-den">12</span></span></span> 盒（4 顆）';
     divA.appendChild(boxA);
     divA.appendChild(lblA);
 
+    // 姊姊拿了 5 顆（盤子中裝 5 顆）
     const divB = document.createElement('div');
     divB.style.textAlign = 'center';
     
     const boxB = document.createElement('div');
     boxB.className = 'l2-box';
-    boxB.style.gridTemplateColumns = 'repeat(4, 1fr)';
-    boxB.style.width = '120px';
+    boxB.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    boxB.style.width = '140px';
     boxB.style.padding = '8px';
-    boxB.style.gap = '4px';
-    boxB.style.height = '90px';
+    boxB.style.gap = '5px';
+    boxB.style.height = '105px';
+    boxB.style.background = '#fff8eb';
+    boxB.style.border = '2px solid #8b4513';
+    boxB.style.borderRadius = '12px';
+    boxB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
 
-    for (let i = 0; i < 12; i++) {
-      const el = document.createElement('div');
-      el.textContent = '🍫';
-      el.style.fontSize = '1.1rem';
-      boxB.appendChild(el);
+    for (let i = 0; i < 6; i++) {
+      const slot = document.createElement('div');
+      slot.style.display = 'flex';
+      slot.style.alignItems = 'center';
+      slot.style.justifyContent = 'center';
+      slot.style.borderRadius = '6px';
+      slot.style.background = i < 5 ? 'rgba(214, 62, 138, 0.2)' : 'transparent';
+      slot.style.border = i < 5 ? '1.5px solid #d63e8a' : 'none';
+      if (i < 5) {
+        slot.textContent = '🍫';
+        slot.style.fontSize = '1.05rem';
+      }
+      boxB.appendChild(slot);
     }
     const lblB = document.createElement('div');
     lblB.style.marginTop = '8px';
     lblB.style.fontWeight = '700';
-    lblB.innerHTML = '<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num">12</span></span><span class="frac-row"><span class="frac-cell frac-den">12</span></span></span> 盒';
+    lblB.innerHTML = '姊姊：<strong>5 顆</strong>';
     divB.appendChild(boxB);
     divB.appendChild(lblB);
 
@@ -4182,22 +4308,25 @@ const GameApp = {
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
+    visualArea.style.justifyContent = 'center';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '10px';
+    visualArea.style.gap = '20px';
+    visualArea.style.flexWrap = 'wrap';
 
     const divA = document.createElement('div');
     divA.style.textAlign = 'center';
     const canvasA = document.createElement('canvas');
     canvasA.width = 120; canvasA.height = 70;
-    canvasA.style.border = '2px dashed var(--panel-border)';
-    canvasA.style.borderRadius = '8px';
-    canvasA.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasA.style.border = '2px solid #c47d2b';
+    canvasA.style.borderRadius = '10px';
+    canvasA.style.background = '#fff8eb';
+    canvasA.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxA = canvasA.getContext('2d');
     
     ctxA.fillStyle = '#ffb800';
     ctxA.fillRect(10, 25, 100, 20);
-    ctxA.strokeStyle = '#5a468f';
+    ctxA.strokeStyle = '#8b4513';
     ctxA.lineWidth = 2;
     ctxA.strokeRect(10, 25, 100, 20);
 
@@ -4212,18 +4341,19 @@ const GameApp = {
     divB.style.textAlign = 'center';
     const canvasB = document.createElement('canvas');
     canvasB.width = 120; canvasB.height = 70;
-    canvasB.style.border = '2px dashed var(--panel-border)';
-    canvasB.style.borderRadius = '8px';
-    canvasB.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasB.style.border = '2px solid #c47d2b';
+    canvasB.style.borderRadius = '10px';
+    canvasB.style.background = '#fff8eb';
+    canvasB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxB = canvasB.getContext('2d');
     
     ctxB.fillStyle = '#ff7ebb';
     ctxB.fillRect(10, 25, 100, 20);
-    ctxB.strokeStyle = '#5a468f';
+    ctxB.strokeStyle = '#8b4513';
     ctxB.lineWidth = 2;
     ctxB.strokeRect(10, 25, 100, 20);
 
-    ctxB.strokeStyle = '#ffffff';
+    ctxB.strokeStyle = '#8b4513';
     ctxB.lineWidth = 1.5;
     for (let i = 1; i < 9; i++) {
       let x = 10 + i * (100 / 9);
@@ -4282,9 +4412,11 @@ const GameApp = {
 
     const visualArea = document.createElement('div');
     visualArea.style.display = 'flex';
-    visualArea.style.flexDirection = 'column';
+    visualArea.style.flexDirection = 'row';
+    visualArea.style.justifyContent = 'center';
     visualArea.style.alignItems = 'center';
-    visualArea.style.gap = '10px';
+    visualArea.style.gap = '20px';
+    visualArea.style.flexWrap = 'wrap';
 
     function drawRoll(ctx, x, y, w, h, fillStyle) {
       ctx.fillStyle = fillStyle;
@@ -4310,9 +4442,10 @@ const GameApp = {
     divA.style.textAlign = 'center';
     const canvasA = document.createElement('canvas');
     canvasA.width = 120; canvasA.height = 70;
-    canvasA.style.border = '2px dashed var(--panel-border)';
-    canvasA.style.borderRadius = '8px';
-    canvasA.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasA.style.border = '2px solid #c47d2b';
+    canvasA.style.borderRadius = '10px';
+    canvasA.style.background = '#fff8eb';
+    canvasA.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxA = canvasA.getContext('2d');
     
     drawRoll(ctxA, 15, 25, 90, 20, '#ffb800');
@@ -4328,9 +4461,10 @@ const GameApp = {
     divB.style.textAlign = 'center';
     const canvasB = document.createElement('canvas');
     canvasB.width = 120; canvasB.height = 70;
-    canvasB.style.border = '2px dashed var(--panel-border)';
-    canvasB.style.borderRadius = '8px';
-    canvasB.style.background = 'rgba(18, 12, 31, 0.4)';
+    canvasB.style.border = '2px solid #c47d2b';
+    canvasB.style.borderRadius = '10px';
+    canvasB.style.background = '#fff8eb';
+    canvasB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
     const ctxB = canvasB.getContext('2d');
     
     drawRoll(ctxB, 15, 25, 90, 20, '#ff7ebb');
@@ -4573,10 +4707,15 @@ const GameApp = {
       tick.style.left = `${leftPos}px`;
       belt.appendChild(tick);
 
+      const target = q.targets.find(t => Math.round(t.ratio * ticksCount) === i);
+
       const label = document.createElement('div');
       label.className = 'l3-tick-label';
       label.style.left = `${leftPos}px`;
-      if (i === 0) {
+      if (target) {
+        // 目標放置刻度不直接印出答案分數，以鮮明三角箭頭導引學生從 0 逐格計數
+        label.innerHTML = `<span style="color:#d63e8a; font-weight:900; font-size:1.1rem;" title="目標放置處">▲</span>`;
+      } else if (i === 0) {
         label.textContent = '0';
       } else if (i === 10) {
         label.innerHTML = '1<br>(公尺)';
@@ -4590,7 +4729,6 @@ const GameApp = {
       }
       belt.appendChild(label);
 
-      const target = q.targets.find(t => Math.round(t.ratio * ticksCount) === i);
       if (target) {
         const dropzone = document.createElement('div');
         dropzone.className = 'l3-dropzone';
@@ -4662,24 +4800,25 @@ const GameApp = {
       const wholeBar = document.createElement('div');
       wholeBar.style.width = '240px';
       wholeBar.style.height = '32px';
-      wholeBar.style.background = '#2e283b';
-      wholeBar.style.border = '2px solid #5a468f';
+      wholeBar.style.background = '#fff8eb';
+      wholeBar.style.border = '2px solid #8b4513';
       wholeBar.style.borderRadius = '16px';
       wholeBar.style.position = 'relative';
       wholeBar.style.overflow = 'hidden';
       wholeBar.style.display = 'flex';
+      wholeBar.style.boxShadow = '0 3px 8px rgba(139, 69, 19, 0.15)';
 
       for (let i = 0; i < den; i++) {
         const seg = document.createElement('div');
         seg.style.flex = '1';
         seg.style.height = '100%';
         seg.style.background = 'linear-gradient(180deg, #ffb800 0%, #cc9300 100%)';
-        seg.style.borderRight = i < den - 1 ? '1.5px solid rgba(0,0,0,0.35)' : 'none';
+        seg.style.borderRight = i < den - 1 ? '1.5px solid rgba(139, 69, 19, 0.4)' : 'none';
         wholeBar.appendChild(seg);
       }
 
       const wholeLabel = document.createElement('div');
-      wholeLabel.innerHTML = `完整的第一個單位：<span style="color:var(--highlight-color); font-weight:900;">1</span> ${unit}`;
+      wholeLabel.innerHTML = `完整的第一個單位：<span style="color:#d63e8a; font-weight:900;">1</span> ${unit}`;
       wholeBox.appendChild(wholeBar);
       wholeBox.appendChild(wholeLabel);
 
@@ -4693,12 +4832,13 @@ const GameApp = {
       const partBar = document.createElement('div');
       partBar.style.width = '240px';
       partBar.style.height = '32px';
-      partBar.style.background = '#2e283b';
-      partBar.style.border = '2px solid #5a468f';
+      partBar.style.background = '#fff8eb';
+      partBar.style.border = '2px solid #8b4513';
       partBar.style.borderRadius = '16px';
       partBar.style.position = 'relative';
       partBar.style.overflow = 'hidden';
       partBar.style.display = 'flex';
+      partBar.style.boxShadow = '0 3px 8px rgba(139, 69, 19, 0.15)';
 
       for (let i = 0; i < den; i++) {
         const seg = document.createElement('div');
@@ -4709,12 +4849,12 @@ const GameApp = {
         } else {
           seg.style.background = 'transparent';
         }
-        seg.style.borderRight = i < den - 1 ? '1.5px solid rgba(0,0,0,0.35)' : 'none';
+        seg.style.borderRight = i < den - 1 ? '1.5px solid rgba(139, 69, 19, 0.4)' : 'none';
         partBar.appendChild(seg);
       }
 
       const partLabel = document.createElement('div');
-      const fracHTML = `<span class="fraction" style="color:var(--highlight-color)">
+      const fracHTML = `<span class="fraction" style="color:#d63e8a; font-weight:900;">
         <span class="frac-row"><span class="frac-cell frac-num">${num}</span></span>
         <span class="frac-row"><span class="frac-cell frac-den">${den}</span></span>
       </span>`;
@@ -5392,10 +5532,29 @@ const GameApp = {
         AudioSynth.playWrong();
         this.triggerMisconceptionVisuals(q);
         SpeechManager.speak(q.misconceptionSpeech);
-        this.showMessage(`💡 答錯囉！${q.misconceptionSpeech}`, "error");
 
         // 安全閥：暫停 AI 計時，讓學生安心看懂解析
         this.pauseAiThinkingTimer();
+
+        // 防盲猜機制：在一般與大師難度下，烘烤失誤會讓狐狸店長趁機拉近 1 格
+        if (GameState.aiDifficulty !== 'easy') {
+          GameState.tugPosition++;
+          GameState.aiFoxPulls++;
+          this.updateConveyorUI();
+          AudioSynth.playConveyorMove();
+          this.showMessage(`💡 答錯囉！${q.misconceptionSpeech}（烘烤失誤，狐狸店長將聖代拉近了 1 格！）`, "error");
+
+          // 檢查是否被拉到極限 (+5) 落敗
+          if (GameState.tugPosition >= 5) {
+            setTimeout(() => {
+              this.finishAiChallenge('lose');
+            }, 1500);
+            return;
+          }
+        } else {
+          // 萌新學徒（easy）難度：初學包容模式，免罰放水，只提供鷹架提示
+          this.showMessage(`💡 答錯囉！${q.misconceptionSpeech}`, "error");
+        }
 
         this.nextBtn.classList.remove('hidden');
       }
@@ -5836,6 +5995,8 @@ const LEVEL_CONFIGS = [
         desc: "下面哪一個正方形紙的塗色部分是 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">3</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">4</span></span></span> 張色紙？",
         speechDesc: "下面哪一個正方形紙的塗色部分是四分之三張色紙？",
         layout: "select-paper-options",
+        num: 3,
+        den: 4,
         options: [
           { id: "A", text: "圖 A（平分成 4 份，塗色 3 份）" },
           { id: "B", text: "圖 B（分成 4 份但大小不一樣）" }
@@ -5964,7 +6125,8 @@ const LEVEL_CONFIGS = [
           { ratio: 0.2, label: "2/10" },
           { ratio: 0.6, label: "6/10" },
           { ratio: 0.9, label: "9/10" }
-        ]
+        ],
+        misconceptionSpeech: "哎呀！從 0 開始往右數，十分之二公尺在第 2 格，十分之六在第 6 格，十分之九則是在第 9 格喔！再數一次看看！"
       },
       {
         type: "interactive-drag",
@@ -5975,7 +6137,8 @@ const LEVEL_CONFIGS = [
           { ratio: 0.1, label: "1/10" },
           { ratio: 0.5, label: "5/10" },
           { ratio: 0.8, label: "8/10" }
-        ]
+        ],
+        misconceptionSpeech: "哎呀！從 0 開始往右數，十分之一公尺在第 1 格，十分之五在正中間第 5 格，十分之八則是在第 8 格喔！再試試看！"
       }
     ] 
   },
