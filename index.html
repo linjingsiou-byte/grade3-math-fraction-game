@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@300..700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3.5">
+  <link rel="stylesheet" href="style.css?v=4.0">
 </head>
 <body>
   <!-- 魔法粒子背景容器 -->
@@ -35,15 +35,18 @@
         </div>
 
         <div class="mode-selection" style="flex-direction: column; gap: 15px; align-items: center;">
-          <div style="display: flex; gap: 20px; justify-content: center;">
+          <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
             <button id="learn-mode-btn" class="magic-btn btn-large btn-primary">
               <span class="btn-icon">🧙‍♂️</span> 個人自學闖關
+            </button>
+            <button id="ai-mode-btn" class="magic-btn btn-large btn-purple">
+              <span class="btn-icon">🦊</span> 單人 AI 挑戰賽
             </button>
             <button id="battle-mode-btn" class="magic-btn btn-large btn-success">
               <span class="btn-icon">⚔️</span> 雙人搶答對決
             </button>
           </div>
-          <button id="welcome-secret-guide-btn" class="magic-btn btn-large btn-warning" style="width: 100%; max-width: 440px;">
+          <button id="welcome-secret-guide-btn" class="magic-btn btn-large btn-warning" style="width: 100%; max-width: 520px;">
             <span class="btn-icon">📖</span> 魔法烘焙秘笈
           </button>
         </div>
@@ -133,6 +136,51 @@
       </div>
     </section>
 
+    <!-- 3-B. 單人 AI 挑戰賽設定畫面 -->
+    <section id="ai-setup-screen" class="screen">
+      <div class="welcome-card setup-card" style="max-width: 680px;">
+        <div class="magic-badge">🦊 甜點輸送帶大拔河</div>
+        <h2 class="setup-title">單人 vs AI 挑戰賽</h2>
+        <p class="setup-subtitle">隔壁街的「🦊 狡猾狐狸店長」來搶奪傳奇彩虹聖代了！請點選挑戰難度：</p>
+        
+        <div class="ai-difficulty-grid">
+          <button class="ai-diff-card" data-diff="easy">
+            <div class="ai-diff-badge">⭐ 輕鬆練習</div>
+            <div class="ai-diff-avatar">🦊☕</div>
+            <div class="ai-diff-name">見習烘焙學徒</div>
+            <div class="ai-diff-desc">思考時間 12～15 秒<br>偶爾會烤焦失誤，落後會放水</div>
+          </button>
+          <button class="ai-diff-card active" data-diff="normal">
+            <div class="ai-diff-badge">⭐⭐ 標準對抗</div>
+            <div class="ai-diff-avatar">🦊👔</div>
+            <div class="ai-diff-name">熟練甜點師傅</div>
+            <div class="ai-diff-desc">思考時間 8～10 秒<br>解題配速穩定，適度緊張感</div>
+          </button>
+          <button class="ai-diff-card" data-diff="hard">
+            <div class="ai-diff-badge">⭐⭐⭐ 極限挑戰</div>
+            <div class="ai-diff-avatar">🦊👑</div>
+            <div class="ai-diff-name">傳奇狡猾主廚</div>
+            <div class="ai-diff-desc">思考時間 4.5～6.5 秒<br>零失誤神速解題，頂尖考驗</div>
+          </button>
+        </div>
+
+        <div class="ai-rules-card">
+          <div class="rule-item">🎯 <strong>拔河機制</strong>：你答對將彩虹聖代往左拉 1 格；狐狸時間到答對將聖代往右拉 1 格！</div>
+          <div class="rule-item">🏆 <strong>勝利目標</strong>：率先將聖代拉到自己端終點（±5 格）或 10 題結束時領先即可獲勝！</div>
+          <div class="rule-item">💡 <strong>教學保護</strong>：若你答錯，AI 會自動暫停思考，讓你安心看懂迷思提示！</div>
+        </div>
+
+        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 25px; width: 100%;">
+          <button id="back-to-menu-from-ai-btn" class="magic-btn btn-danger" style="flex: 1; max-width: 160px;">
+            🏠 回首頁
+          </button>
+          <button id="start-ai-challenge-btn" class="magic-btn btn-large btn-purple" style="flex: 2; max-width: 280px;">
+            🚀 開始拔河對決！
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- 4. 遊戲主畫面 -->
     <section id="play-screen" class="screen">
       <!-- 頂部資訊列 -->
@@ -194,6 +242,66 @@
 
       <!-- 遊戲核心區域 -->
       <main class="game-main">
+        <!-- 甜點輸送帶拔河軌道儀表板 (單人 AI 挑戰模式專屬) -->
+        <div id="conveyor-tug-war" class="conveyor-tug-war hidden">
+          <div class="tug-header">
+            <div class="tug-team team-player">
+              <span class="tug-avatar">🐱</span>
+              <div class="tug-team-info">
+                <span class="tug-name">你的烘焙坊</span>
+                <span id="player-tug-score" class="tug-score-badge">0 格</span>
+              </div>
+            </div>
+            
+            <div class="tug-center-status">
+              <span id="tug-status-text" class="tug-status-text">⚡ 拔河對決進行中！快算出來拉動聖代！</span>
+            </div>
+
+            <div class="tug-team team-ai">
+              <div class="tug-team-info right-align">
+                <span id="ai-opponent-name" class="tug-name">狡猾狐狸店長</span>
+                <span id="ai-thinking-state" class="tug-thinking-badge">🦊 計算中...</span>
+              </div>
+              <span id="ai-fox-avatar" class="tug-avatar">🦊</span>
+            </div>
+          </div>
+
+          <!-- 輸送帶齒輪與刻度軌道 -->
+          <div class="conveyor-track-wrapper">
+            <div class="gear gear-left" id="gear-left">⚙️</div>
+            <div class="conveyor-track" id="conveyor-track">
+              <!-- 刻度與標記 -->
+              <div class="track-markers">
+                <span class="track-marker win-point-left" title="學生終點">-5<br>🏠</span>
+                <span class="track-marker">-4</span>
+                <span class="track-marker">-3</span>
+                <span class="track-marker">-2</span>
+                <span class="track-marker">-1</span>
+                <span class="track-marker zero-point">0<br>⚖️</span>
+                <span class="track-marker">+1</span>
+                <span class="track-marker">+2</span>
+                <span class="track-marker">+3</span>
+                <span class="track-marker">+4</span>
+                <span class="track-marker win-point-right" title="狐狸終點">+5<br>🦊</span>
+              </div>
+              <!-- 滑動聖代本體 (50% 為刻度 0) -->
+              <div id="conveyor-sundae" class="conveyor-sundae" style="left: 50%;">
+                <span class="sundae-icon">🍨</span>
+                <span class="sundae-glow"></span>
+              </div>
+            </div>
+            <div class="gear gear-right" id="gear-right">⚙️</div>
+          </div>
+
+          <!-- 狐狸思考進度條 -->
+          <div class="ai-timer-bar-wrapper">
+            <div class="ai-timer-label">🦊 狐狸思考進度：</div>
+            <div class="ai-timer-track">
+              <div id="ai-timer-fill" class="ai-timer-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- 題目說明與 TTS 報讀按鈕 -->
         <div class="question-banner">
           <button id="tts-btn" class="tts-button" title="聽題目">
@@ -332,6 +440,46 @@
       </div>
     </div>
 
+    <!-- 6-B. 單人 AI 挑戰結束：結算模態框 -->
+    <div id="ai-result-modal" class="modal">
+      <div class="modal-content certificate-card" id="ai-result-card" style="border-color: #9c27b0; box-shadow: 0 0 35px rgba(156, 39, 176, 0.4);">
+        <div class="cert-border">
+          <div class="cert-header">
+            <div class="cert-star" id="ai-result-star" style="color: #9c27b0;">🏆 CONVEYOR BATTLE RESULT 🏆</div>
+            <h2 class="cert-main-title" id="ai-winner-title">輸送帶拔河結果</h2>
+            <div class="cert-divider" style="background: linear-gradient(90deg, transparent, #9c27b0, transparent);"></div>
+          </div>
+          
+          <div class="cert-body">
+            <div class="battle-final-scores">
+              <div class="final-score-item">
+                <span class="final-avatar">🐱</span>
+                <span class="final-name">你拉動的距離</span>
+                <span id="ai-final-player-pull" class="final-val" style="color: #2E7D32;">0 格</span>
+              </div>
+              <div class="final-score-item">
+                <span class="final-avatar">🦊</span>
+                <span class="final-name">狐狸拉動的距離</span>
+                <span id="ai-final-fox-pull" class="final-val" style="color: #e65100;">0 格</span>
+              </div>
+            </div>
+            
+            <div class="battle-trophy" id="ai-trophy-emoji">🍨</div>
+            <p class="cert-text" id="ai-winner-text" style="font-size: 1.3rem; font-weight: 900; color: #9c27b0;">
+              恭喜你成功保衛了傳奇彩虹聖代！
+            </p>
+            <div class="mascot-chat" id="ai-dialogue-bubble" style="margin-top: 15px; font-size: 1.05rem;">
+              <p id="ai-dialogue-text">🦊 狐狸店長：「甘拜下風！你的分數魔法比我的算盤還厲害，這座聖代就歸你了！」</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions" style="display: flex; gap: 15px; justify-content: center;">
+          <button id="ai-restart-btn" class="magic-btn btn-large btn-purple">⚡ 再玩一局</button>
+          <button id="ai-back-menu-btn" class="magic-btn btn-large btn-danger">🏠 回首頁</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 7. 自學挑戰失敗：Game Over 模態框 -->
     <div id="gameover-modal" class="modal">
       <div class="modal-content gameover-card">
@@ -439,6 +587,6 @@
 
   </div>
 
-  <script src="app.js?v=3.0"></script>
+  <script src="app.js?v=4.0"></script>
 </body>
 </html>

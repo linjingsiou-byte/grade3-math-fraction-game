@@ -274,6 +274,85 @@ const AudioSynth = {
     } catch (e) {
       console.warn("Failed to play audio", e);
     }
+  },
+
+  // 輸送帶齒輪轉動與聖代滑動音 (連續輕快喀嚓下滑音)
+  playConveyorMove() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      [587.33, 739.99, 880.00, 1174.66].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+        gain.gain.setValueAtTime(0.12, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.06 + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.18);
+      });
+    } catch (e) {
+      console.warn("Failed to play audio", e);
+    }
+  },
+
+  // 狐狸狡黠輕快笑聲 (俏皮頑皮雙音調)
+  playFoxChuckle() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      [440, 554.37, 659.25, 554.37].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, now + idx * 0.08);
+
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.09, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.14);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.14);
+      });
+    } catch (e) {
+      console.warn("Failed to play audio", e);
+    }
+  },
+
+  // 狐狸算錯烤焦冒煙失誤音效 (噗嗤下滑頓音)
+  playFoxFail() {
+    this.init();
+    const ctx = this.ctx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.35);
+
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } catch (e) {
+      console.warn("Failed to play audio", e);
+    }
   }
 };
 
@@ -1064,6 +1143,18 @@ const GameState = {
   battleQuestionQueue: [],  // 對戰隨機題目陣列
   lockedOptions: [],        // 對戰中已被選錯而鎖定的選項
 
+  // 單人 vs AI 挑戰模式 (甜點輸送帶大拔河)
+  aiDifficulty: 'normal',   // 'easy' | 'normal' | 'hard'
+  tugPosition: 0,           // 拔河刻度位置：-5 (學生大勝) ~ 0 (中立平衡) ~ +5 (狐狸大勝)
+  aiThinkingTimer: null,    // 狐狸思考計時器 ID
+  aiThinkingElapsed: 0,     // 狐狸已思考毫秒數
+  aiThinkingTotal: 10,      // 狐狸單題總思考秒數
+  aiQuestionQueue: [],      // AI 對決題目清單
+  aiRoundsPlayed: 0,        // 目前進行第幾題
+  aiPlayerPulls: 0,         // 學生拉動次數
+  aiFoxPulls: 0,            // 狐狸拉動次數
+  aiTimerPaused: false,     // 答錯迷思導正時是否暫停計時
+
   selectedOption: null,
   selectedItemsCount: 0, 
   scaleSelectedOp: null,  
@@ -1114,6 +1205,20 @@ const GameState = {
     this.battleQuestionQueue = [];
     this.lockedOptions = [];
 
+    // 重置 AI 挑戰狀態
+    this.tugPosition = 0;
+    if (this.aiThinkingTimer) {
+      clearInterval(this.aiThinkingTimer);
+      this.aiThinkingTimer = null;
+    }
+    this.aiThinkingElapsed = 0;
+    this.aiThinkingTotal = 10;
+    this.aiQuestionQueue = [];
+    this.aiRoundsPlayed = 0;
+    this.aiPlayerPulls = 0;
+    this.aiFoxPulls = 0;
+    this.aiTimerPaused = false;
+
     this.selectedOption = null;
     this.selectedItemsCount = 0;
     this.scaleSelectedOp = null;
@@ -1124,6 +1229,8 @@ const GameState = {
   getCurrentQuestion() {
     if (this.gameMode === 'learn') {
       return this.currentLevelQuestions[this.currentQuestionIdx];
+    } else if (this.gameMode === 'ai-challenge') {
+      return this.aiQuestionQueue[this.aiRoundsPlayed];
     } else {
       return this.battleQuestionQueue[this.battleCurrentRound];
     }
@@ -1267,6 +1374,33 @@ const GameApp = {
     this.battleTrophyEmoji = document.getElementById('battle-trophy-emoji');
     this.footerHintText = document.getElementById('footer-hint-text');
 
+    // AI 挑戰模式元件
+    this.aiModeBtn = document.getElementById('ai-mode-btn');
+    this.aiSetupScreen = document.getElementById('ai-setup-screen');
+    this.backToMenuFromAiBtn = document.getElementById('back-to-menu-from-ai-btn');
+    this.startAiChallengeBtn = document.getElementById('start-ai-challenge-btn');
+    this.aiDiffCards = document.querySelectorAll('.ai-diff-card');
+
+    this.conveyorTugWar = document.getElementById('conveyor-tug-war');
+    this.conveyorSundae = document.getElementById('conveyor-sundae');
+    this.playerTugScore = document.getElementById('player-tug-score');
+    this.aiOpponentName = document.getElementById('ai-opponent-name');
+    this.aiThinkingState = document.getElementById('ai-thinking-state');
+    this.aiFoxAvatar = document.getElementById('ai-fox-avatar');
+    this.tugStatusText = document.getElementById('tug-status-text');
+    this.aiTimerFill = document.getElementById('ai-timer-fill');
+
+    this.aiResultModal = document.getElementById('ai-result-modal');
+    this.aiResultCard = document.getElementById('ai-result-card');
+    this.aiWinnerTitle = document.getElementById('ai-winner-title');
+    this.aiFinalPlayerPull = document.getElementById('ai-final-player-pull');
+    this.aiFinalFoxPull = document.getElementById('ai-final-fox-pull');
+    this.aiTrophyEmoji = document.getElementById('ai-trophy-emoji');
+    this.aiWinnerText = document.getElementById('ai-winner-text');
+    this.aiDialogueText = document.getElementById('ai-dialogue-text');
+    this.aiRestartBtn = document.getElementById('ai-restart-btn');
+    this.aiBackMenuBtn = document.getElementById('ai-back-menu-btn');
+
     if (this.autoSpeechCb) {
       this.autoSpeechCb.checked = GameState.autoSpeech;
     }
@@ -1295,6 +1429,69 @@ const GameApp = {
       this.showScreen(this.setupScreen);
       SpeechManager.speak("請選擇對決題數！");
     });
+
+    // 1-B. AI 挑戰模式按鈕事件
+    if (this.aiModeBtn) {
+      this.aiModeBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioSynth.playClick();
+        GameState.gameMode = 'ai-challenge';
+        GameState.reset();
+        this.showScreen(this.aiSetupScreen);
+        SpeechManager.speak("歡迎來到單人 AI 挑戰賽！隔壁街的狡猾狐狸店長來搶聖代囉，請選擇挑戰難度！");
+      });
+    }
+
+    if (this.backToMenuFromAiBtn) {
+      this.backToMenuFromAiBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioSynth.playClick();
+        SpeechManager.stop();
+        this.clearAiThinkingTimer();
+        this.showScreen(this.welcomeScreen);
+      });
+    }
+
+    if (this.aiDiffCards) {
+      this.aiDiffCards.forEach(card => {
+        card.addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          AudioSynth.playClick();
+          this.aiDiffCards.forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          GameState.aiDifficulty = card.dataset.diff;
+          const diffNames = { easy: "見習烘焙學徒", normal: "熟練甜點師傅", hard: "傳奇狡猾主廚" };
+          SpeechManager.speak(`已選擇難度：${diffNames[GameState.aiDifficulty]}`);
+        });
+      });
+    }
+
+    if (this.startAiChallengeBtn) {
+      this.startAiChallengeBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioSynth.playClick();
+        this.startAiChallenge();
+      });
+    }
+
+    if (this.aiRestartBtn) {
+      this.aiRestartBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioSynth.playClick();
+        this.aiResultModal.classList.remove('active');
+        this.startAiChallenge();
+      });
+    }
+
+    if (this.aiBackMenuBtn) {
+      this.aiBackMenuBtn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        AudioSynth.playClick();
+        this.aiResultModal.classList.remove('active');
+        this.clearAiThinkingTimer();
+        this.showScreen(this.welcomeScreen);
+      });
+    }
 
     this.backToMenuBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
@@ -1355,6 +1552,9 @@ const GameApp = {
       e.stopPropagation();
       AudioSynth.playClick();
       SpeechManager.stop();
+      this.clearBattleThinkingTimer();
+      this.clearBattleAnswerTimer();
+      this.clearAiThinkingTimer();
       this.showScreen(this.welcomeScreen);
     });
 
@@ -1475,16 +1675,18 @@ const GameApp = {
 
     // 7. 鍵盤監聽事件 (A 搶答, L 搶答, [1][2][3] 選項, Enter/Space 送出或下一題)
     window.addEventListener('keydown', (e) => {
-      if (GameState.gameMode !== 'battle') return;
+      if (GameState.gameMode !== 'battle' && GameState.gameMode !== 'ai-challenge') return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-      // (1) 搶答鍵 (貓咪 A / 狗狗 L)
-      if (e.code === 'KeyA') {
-        this.handleBuzzerPress('A');
-        return;
-      } else if (e.code === 'KeyL') {
-        this.handleBuzzerPress('B');
-        return;
+      // (1) 搶答鍵 (貓咪 A / 狗狗 L，僅限雙人對戰模式)
+      if (GameState.gameMode === 'battle') {
+        if (e.code === 'KeyA') {
+          this.handleBuzzerPress('A');
+          return;
+        } else if (e.code === 'KeyL') {
+          this.handleBuzzerPress('B');
+          return;
+        }
       }
 
       // (2) 數字快捷鍵：[1], [2], [3] 選取工作區選項
@@ -1604,6 +1806,11 @@ const GameApp = {
       this.currentLevelNum.textContent = lvl.levelNum;
       this.levelTitleDisplay.textContent = lvl.name;
       this.footerHintText.textContent = "操作提示：請點擊或拖曳甜點來回答問題。";
+    } else if (GameState.gameMode === 'ai-challenge') {
+      this.levelTitleDisplay.textContent = `拔河對決第 ${GameState.aiRoundsPlayed + 1} / ${GameState.aiQuestionQueue.length} 題`;
+      const pct = (GameState.aiRoundsPlayed / GameState.aiQuestionQueue.length) * 100;
+      this.progressFill.style.width = `${pct}%`;
+      this.footerHintText.textContent = "操作提示：請仔細看題並選出正確答案，搶在狐狸算出前送出，把聖代往左拉！";
     } else {
       this.scoreA.textContent = GameState.playerScores.A;
       this.scoreB.textContent = GameState.playerScores.B;
@@ -1647,6 +1854,305 @@ const GameApp = {
     if (GameState.battleAnswerTimer) {
       clearInterval(GameState.battleAnswerTimer);
       GameState.battleAnswerTimer = null;
+    }
+  },
+
+  // ==========================================
+  // AI 挑戰模式（甜點輸送帶大拔河）核心控制器
+  // ==========================================
+  startAiChallenge() {
+    GameState.gameMode = 'ai-challenge';
+    GameState.reset();
+
+    // 隨機抽選 10 題
+    const shuffled = [...BATTLE_QUESTIONS].sort(() => Math.random() - 0.5);
+    GameState.aiQuestionQueue = shuffled.slice(0, 10);
+    GameState.aiRoundsPlayed = 0;
+    GameState.tugPosition = 0;
+    GameState.aiPlayerPulls = 0;
+    GameState.aiFoxPulls = 0;
+
+    // 介面切換
+    this.battlePlayersPanel.classList.add('hidden');
+    document.getElementById('learn-status-tracker').classList.add('hidden');
+    this.levelLabelDisplay.style.display = 'none';
+
+    this.buzzerBtnA.classList.add('hidden');
+    this.buzzerBtnB.classList.add('hidden');
+    if (this.workspaceOverlay) this.workspaceOverlay.classList.add('hidden');
+    if (this.battleStatusBar) this.battleStatusBar.classList.add('hidden');
+
+    if (this.conveyorTugWar) this.conveyorTugWar.classList.remove('hidden');
+
+    // 設定對手名稱
+    const diffNames = { easy: "見習狐狸學徒", normal: "熟練狐狸師傅", hard: "傳奇狡猾主廚" };
+    if (this.aiOpponentName) this.aiOpponentName.textContent = diffNames[GameState.aiDifficulty] || "狡猾狐狸店長";
+
+    this.updateConveyorUI();
+    this.updateStatusUI();
+    this.showScreen(this.playScreen);
+    this.loadQuestion();
+
+    SpeechManager.speak(`甜點輸送帶大拔河開始！對手是${this.aiOpponentName ? this.aiOpponentName.textContent : '狡猾狐狸店長'}，快把彩虹聖代拉進你的店裡吧！`);
+  },
+
+  updateConveyorUI() {
+    if (!this.conveyorSundae) return;
+
+    // 刻度範圍 -5 (學生端 10%) ~ 0 (正中央 50%) ~ +5 (狐狸端 90%)
+    // 每格 8%
+    const centerPct = 50;
+    const stepPct = 8;
+    const targetLeft = centerPct + (GameState.tugPosition * stepPct);
+    this.conveyorSundae.style.left = `${Math.max(10, Math.min(90, targetLeft))}%`;
+
+    if (this.playerTugScore) {
+      const pDiff = -GameState.tugPosition;
+      this.playerTugScore.textContent = pDiff > 0 ? `領先 +${pDiff} 格` : pDiff < 0 ? `落後 ${pDiff} 格` : `平手 0 格`;
+      this.playerTugScore.style.color = pDiff > 0 ? '#2E7D32' : pDiff < 0 ? '#d32f2f' : '#f57c00';
+    }
+
+    if (this.tugStatusText) {
+      if (GameState.tugPosition <= -3) {
+        this.tugStatusText.innerHTML = '🔥 <strong>優勢巨大！</strong> 就差一點點把聖代拉進店裡了！';
+      } else if (GameState.tugPosition >= 3) {
+        this.tugStatusText.innerHTML = '⚠️ <strong>危險！</strong> 聖代快被狐狸偷走啦，快專注答題！';
+      } else if (GameState.tugPosition === 0) {
+        this.tugStatusText.innerHTML = '⚖️ <strong>勢均力敵！</strong> 聖代在中央，快搶先答對！';
+      } else if (GameState.tugPosition < 0) {
+        this.tugStatusText.innerHTML = `🌟 <strong>領先 ${-GameState.tugPosition} 格！</strong> 保持氣勢繼續推進！`;
+      } else {
+        this.tugStatusText.innerHTML = `💦 <strong>落後 ${GameState.tugPosition} 格！</strong> 加油，一題就能扳回局勢！`;
+      }
+    }
+  },
+
+  clearAiThinkingTimer() {
+    if (GameState.aiThinkingTimer) {
+      clearInterval(GameState.aiThinkingTimer);
+      GameState.aiThinkingTimer = null;
+    }
+    if (this.aiFoxAvatar) {
+      this.aiFoxAvatar.classList.remove('fox-sweat', 'fox-fail');
+    }
+    if (this.aiTimerFill) {
+      this.aiTimerFill.style.width = '0%';
+    }
+  },
+
+  pauseAiThinkingTimer() {
+    GameState.aiTimerPaused = true;
+    if (this.aiThinkingState) {
+      this.aiThinkingState.textContent = '⏸️ 思考暫停中';
+      this.aiThinkingState.style.background = '#e0e0e0';
+      this.aiThinkingState.style.color = '#616161';
+    }
+  },
+
+  resumeAiThinkingTimer() {
+    GameState.aiTimerPaused = false;
+    if (this.aiThinkingState) {
+      this.aiThinkingState.textContent = '🦊 計算中...';
+      this.aiThinkingState.style.background = '#fff3e0';
+      this.aiThinkingState.style.color = '#e65100';
+    }
+  },
+
+  startAiThinkingTimer() {
+    this.clearAiThinkingTimer();
+    GameState.aiTimerPaused = false;
+
+    // 依難度設定思考秒數
+    let durationSec = 9.0;
+    if (GameState.aiDifficulty === 'easy') {
+      durationSec = 12.0 + Math.random() * 3.0; // 12~15s
+      // 放水機制：若學生落後達 2 格以上，狐狸放慢 +4 秒
+      if (GameState.tugPosition >= 2) {
+        durationSec += 4.0;
+      }
+    } else if (GameState.aiDifficulty === 'hard') {
+      durationSec = 4.5 + Math.random() * 2.0; // 4.5~6.5s
+    } else {
+      durationSec = 8.0 + Math.random() * 2.0; // 8~10s
+    }
+
+    GameState.aiThinkingTotal = durationSec;
+    GameState.aiThinkingElapsed = 0;
+
+    const totalMs = durationSec * 1000;
+    const intervalMs = 100;
+
+    if (this.aiThinkingState) {
+      this.aiThinkingState.textContent = '🦊 計算中...';
+      this.aiThinkingState.style.background = '#fff3e0';
+      this.aiThinkingState.style.color = '#e65100';
+    }
+    if (this.aiFoxAvatar) {
+      this.aiFoxAvatar.classList.remove('fox-sweat', 'fox-fail');
+    }
+
+    GameState.aiThinkingTimer = setInterval(() => {
+      // 若安全閥暫停，不累加時間
+      if (GameState.aiTimerPaused) return;
+
+      GameState.aiThinkingElapsed += intervalMs;
+      const remainingSec = Math.max(0, (totalMs - GameState.aiThinkingElapsed) / 1000);
+      const percent = Math.min(100, (GameState.aiThinkingElapsed / totalMs) * 100);
+
+      if (this.aiTimerFill) {
+        this.aiTimerFill.style.width = `${percent}%`;
+      }
+
+      // 剩餘 2 秒內，狐狸頭像抖動冒汗提醒學生
+      if (remainingSec <= 2.0 && remainingSec > 0) {
+        if (this.aiFoxAvatar) this.aiFoxAvatar.classList.add('fox-sweat');
+        if (this.aiThinkingState) {
+          this.aiThinkingState.textContent = '💦 快算出來了！';
+          this.aiThinkingState.style.background = '#ffebee';
+          this.aiThinkingState.style.color = '#c62828';
+        }
+      }
+
+      if (GameState.aiThinkingElapsed >= totalMs) {
+        this.clearAiThinkingTimer();
+        this.onAiThinkingComplete();
+      }
+    }, intervalMs);
+  },
+
+  onAiThinkingComplete() {
+    // 計算 AI 正確率
+    let successRate = 0.90;
+    if (GameState.aiDifficulty === 'easy') successRate = 0.75;
+    else if (GameState.aiDifficulty === 'hard') successRate = 1.0;
+
+    const isSuccess = Math.random() < successRate;
+
+    if (isSuccess) {
+      this.handleAiAnswerCorrect();
+    } else {
+      this.handleAiAnswerWrong();
+    }
+  },
+
+  handleAiAnswerCorrect() {
+    GameState.tugPosition++;
+    GameState.aiFoxPulls++;
+    this.updateConveyorUI();
+
+    AudioSynth.playFoxChuckle();
+    AudioSynth.playConveyorMove();
+
+    const msg = "🦊 狐狸店長解出題目了！聖代往狐狸端移動了 1 格！";
+    this.showMessage(msg, "error");
+    SpeechManager.speak("狐狸算出來囉，聖代被拉過去一格了！");
+
+    // 檢查狐狸是否已拉到終點 (+5)
+    if (GameState.tugPosition >= 5) {
+      setTimeout(() => {
+        this.finishAiChallenge('lose');
+      }, 1200);
+      return;
+    }
+
+    // 換下一題繼續拔河
+    setTimeout(() => {
+      this.nextAiQuestion();
+    }, 1500);
+  },
+
+  handleAiAnswerWrong() {
+    AudioSynth.playFoxFail();
+    if (this.aiFoxAvatar) {
+      this.aiFoxAvatar.classList.add('fox-fail');
+    }
+    const msg = "💥 哎呀！狐狸店長心急算錯烤焦了，聖代原地不動！";
+    this.showMessage(msg, "info");
+    SpeechManager.speak("哎呀，狐狸算錯囉！快趁現在答題！");
+
+    // 狐狸重新開始思考本題
+    setTimeout(() => {
+      if (GameState.gameMode === 'ai-challenge' && !this.submitBtn.classList.contains('hidden')) {
+        this.startAiThinkingTimer();
+      }
+    }, 1200);
+  },
+
+  nextAiQuestion() {
+    GameState.aiRoundsPlayed++;
+    if (GameState.aiRoundsPlayed >= GameState.aiQuestionQueue.length) {
+      // 題數打滿結算
+      if (GameState.tugPosition < 0) {
+        this.finishAiChallenge('win');
+      } else if (GameState.tugPosition > 0) {
+        this.finishAiChallenge('lose');
+      } else {
+        this.finishAiChallenge('draw');
+      }
+    } else {
+      this.loadQuestion();
+    }
+  },
+
+  finishAiChallenge(result) {
+    this.clearAiThinkingTimer();
+    SpeechManager.stop();
+
+    if (this.aiFinalPlayerPull) this.aiFinalPlayerPull.textContent = `${GameState.aiPlayerPulls} 次`;
+    if (this.aiFinalFoxPull) this.aiFinalFoxPull.textContent = `${GameState.aiFoxPulls} 次`;
+
+    if (result === 'win') {
+      AudioSynth.playCertificate();
+      if (this.aiResultCard) {
+        this.aiResultCard.style.borderColor = '#2E7D32';
+        this.aiResultCard.style.boxShadow = '0 0 35px rgba(46, 125, 50, 0.4)';
+      }
+      if (this.aiWinnerTitle) this.aiWinnerTitle.textContent = "🏆 拔河大獲全勝！";
+      if (this.aiTrophyEmoji) this.aiTrophyEmoji.textContent = "🍨✨";
+      if (this.aiWinnerText) {
+        this.aiWinnerText.textContent = "恭喜你！成功將傳奇彩虹聖代拉進店內！";
+        this.aiWinnerText.style.color = '#2E7D32';
+      }
+      if (this.aiDialogueText) {
+        this.aiDialogueText.innerHTML = "🦊 狐狸店長：「甘拜下風！你的分數魔法太純熟了，看來隔壁街的甜點霸主非你莫屬！」";
+      }
+      SpeechManager.speak("太棒了！你戰勝了狡猾狐狸店長，成功奪得傳奇彩虹聖代！");
+    } else if (result === 'lose') {
+      AudioSynth.playWrong();
+      if (this.aiResultCard) {
+        this.aiResultCard.style.borderColor = '#e65100';
+        this.aiResultCard.style.boxShadow = '0 0 35px rgba(230, 81, 0, 0.4)';
+      }
+      if (this.aiWinnerTitle) this.aiWinnerTitle.textContent = "😿 聖代被狐狸抱走了...";
+      if (this.aiTrophyEmoji) this.aiTrophyEmoji.textContent = "🦊🍨";
+      if (this.aiWinnerText) {
+        this.aiWinnerText.textContent = "再接再厲！狐狸手速太快，把聖代拉走了！";
+        this.aiWinnerText.style.color = '#e65100';
+      }
+      if (this.aiDialogueText) {
+        this.aiDialogueText.innerHTML = "🦊 狐狸店長：「哈哈！這座彩虹聖代我就心懷感激地收下囉，下次準備好再來挑戰我吧！」";
+      }
+      SpeechManager.speak("哎呀，聖代被狐狸店長抱走囉。不要氣餒，再挑戰一次吧！");
+    } else {
+      AudioSynth.playBuzzerOpen();
+      if (this.aiResultCard) {
+        this.aiResultCard.style.borderColor = '#f57c00';
+        this.aiResultCard.style.boxShadow = '0 0 35px rgba(245, 124, 0, 0.4)';
+      }
+      if (this.aiWinnerTitle) this.aiWinnerTitle.textContent = "🤝 勢均力敵，拔河平手！";
+      if (this.aiTrophyEmoji) this.aiTrophyEmoji.textContent = "🍨🤝";
+      if (this.aiWinnerText) {
+        this.aiWinnerText.textContent = "雙方實力旗鼓相當，聖代剛好停留在中央！";
+        this.aiWinnerText.style.color = '#f57c00';
+      }
+      if (this.aiDialogueText) {
+        this.aiDialogueText.innerHTML = "🦊 狐狸店長：「居然能跟我打成平手，你的分數心算真不簡單，我們擇日再戰！」";
+      }
+      SpeechManager.speak("雙方打成平手！聖代剛好停留在中央，你的分數實力真不簡單！");
+    }
+
+    if (this.aiResultModal) {
+      this.aiResultModal.classList.add('active');
     }
   },
 
@@ -1834,7 +2340,7 @@ const GameApp = {
   },
 
   enhanceWorkspaceWithShortcuts() {
-    if (GameState.gameMode !== 'battle') return;
+    if (GameState.gameMode !== 'battle' && GameState.gameMode !== 'ai-challenge') return;
     const optionBtns = this.workspaceArea.querySelectorAll('.l1-option-btn, .l4-op-btn');
     optionBtns.forEach((btn, idx) => {
       if (idx < 9 && !btn.querySelector('.key-badge')) {
@@ -1847,8 +2353,10 @@ const GameApp = {
   },
 
   selectOptionByIndex(idx) {
-    if (GameState.gameMode !== 'battle') return;
-    if (!GameState.currentPlayer || GameState.isThinkingPhase) return;
+    if (GameState.gameMode !== 'battle' && GameState.gameMode !== 'ai-challenge') return;
+    if (GameState.gameMode === 'battle') {
+      if (!GameState.currentPlayer || GameState.isThinkingPhase) return;
+    }
     const optionBtns = Array.from(this.workspaceArea.querySelectorAll('.l1-option-btn, .l4-op-btn'));
     if (optionBtns[idx] && !optionBtns[idx].disabled && !optionBtns[idx].classList.contains('disabled')) {
       optionBtns[idx].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
@@ -1906,11 +2414,22 @@ const GameApp = {
     this.renderWorkspace(q);
 
     if (GameState.gameMode === 'battle') {
+      if (this.conveyorTugWar) this.conveyorTugWar.classList.add('hidden');
       if (this.workspaceOverlay) this.workspaceOverlay.classList.add('hidden');
       this.buzzerBtnA.classList.remove('hidden');
       this.buzzerBtnB.classList.remove('hidden');
       this.startBattleThinkingCountdown(3.0);
+    } else if (GameState.gameMode === 'ai-challenge') {
+      if (this.battleStatusBar) this.battleStatusBar.classList.add('hidden');
+      if (this.conveyorTugWar) this.conveyorTugWar.classList.remove('hidden');
+      this.workspaceArea.style.pointerEvents = 'auto';
+      this.buzzerBtnA.classList.add('hidden');
+      this.buzzerBtnB.classList.add('hidden');
+      if (this.workspaceOverlay) this.workspaceOverlay.classList.add('hidden');
+      this.updateConveyorUI();
+      this.startAiThinkingTimer();
     } else {
+      if (this.conveyorTugWar) this.conveyorTugWar.classList.add('hidden');
       if (this.battleStatusBar) this.battleStatusBar.classList.add('hidden');
       this.workspaceArea.style.pointerEvents = 'auto';
       this.buzzerBtnA.classList.add('hidden');
@@ -2053,7 +2572,7 @@ const GameApp = {
       this.renderSwissRollEqualsOne10();
     }
 
-    if (GameState.gameMode === 'battle') {
+    if (GameState.gameMode === 'battle' || GameState.gameMode === 'ai-challenge') {
       this.enhanceWorkspaceWithShortcuts();
     }
   },
@@ -4832,6 +5351,54 @@ const GameApp = {
           }, 3000);
         }
       }
+    } else if (GameState.gameMode === 'ai-challenge') {
+      // ----------------- (C) 單人 AI 拔河作答 -----------------
+      this.clearAiThinkingTimer(); // 學生作答立即結算本題計時
+      this.submitBtn.classList.add('hidden');
+      this.workspaceArea.style.pointerEvents = 'none';
+
+      if (isCorrect) {
+        AudioSynth.playCorrect();
+        AudioSynth.playConveyorMove();
+
+        // 聖代往左移動 1 格 (靠近學生店舖)
+        GameState.tugPosition--;
+        GameState.aiPlayerPulls++;
+        this.updateConveyorUI();
+
+        if (q.type === 'interactive-scale') {
+          const diff = q.leftVal - q.rightVal;
+          const targetDeg = diff > 0 ? -12 : diff < 0 ? 12 : 0;
+          this.tiltScale(targetDeg);
+          setTimeout(() => {
+            AudioSynth.playScaleThud();
+          }, 250);
+        }
+
+        const msg = "🎉 答對了！彩虹聖代向你的烘焙坊拉近了 1 格！";
+        this.showMessage(msg, "success");
+        SpeechManager.speak("太棒了！答對了，聖代往你這邊移動一格！");
+
+        // 檢查是否直接拉到終點 (-5) 獲勝
+        if (GameState.tugPosition <= -5) {
+          setTimeout(() => {
+            this.finishAiChallenge('win');
+          }, 1200);
+          return;
+        }
+
+        this.nextBtn.classList.remove('hidden');
+      } else {
+        AudioSynth.playWrong();
+        this.triggerMisconceptionVisuals(q);
+        SpeechManager.speak(q.misconceptionSpeech);
+        this.showMessage(`💡 答錯囉！${q.misconceptionSpeech}`, "error");
+
+        // 安全閥：暫停 AI 計時，讓學生安心看懂解析
+        this.pauseAiThinkingTimer();
+
+        this.nextBtn.classList.remove('hidden');
+      }
     } else {
       // ----------------- (B) 雙人對戰接力作答 -----------------
       const activePName = GameState.currentPlayer === 'A' ? '玩家 A (🐱)' : '玩家 B (🐶)';
@@ -5071,6 +5638,8 @@ const GameApp = {
       } else {
         this.loadQuestion();
       }
+    } else if (GameState.gameMode === 'ai-challenge') {
+      this.nextAiQuestion();
     } else {
       GameState.battleCurrentRound++;
       GameState.currentPlayer = null;
