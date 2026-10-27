@@ -1610,44 +1610,72 @@ input:checked + .slider:before {
   position: absolute;
   width: 70px;
   height: 70px;
-  border: 2px dashed rgba(93, 64, 55, 0.25);
+  border: 2.5px dashed rgba(93, 64, 55, 0.3);
   border-radius: 50%;
   transform: translate(-50%, -35px);
   top: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.7);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: rgba(255, 255, 255, 0.85);
+  touch-action: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.l3-dropzone:hover {
+  border-color: #8e24aa;
+  background: rgba(142, 36, 170, 0.08);
+  transform: translate(-50%, -35px) scale(1.05);
 }
 
 .l3-dropzone.hovered {
-  border-color: var(--accent-color);
-  background: rgba(255, 126, 187, 0.1);
-  transform: translate(-50%, -35px) scale(1.1);
+  border-color: #e91e63;
+  background: rgba(233, 30, 99, 0.15);
+  box-shadow: 0 0 16px rgba(233, 30, 99, 0.4);
+  transform: translate(-50%, -35px) scale(1.12);
+}
+
+/* 當有盤子處於選中狀態時，提示可點擊放置的目標虛線圈 */
+.l3-dropzone.target-hint {
+  border-color: #d81b60;
+  border-style: solid;
+  background: rgba(233, 30, 99, 0.14);
+  box-shadow: 0 0 14px rgba(233, 30, 99, 0.35);
+  animation: zoneHintPulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes zoneHintPulse {
+  0% { transform: translate(-50%, -35px) scale(1); border-color: #d81b60; }
+  100% { transform: translate(-50%, -35px) scale(1.08); border-color: #8e24aa; box-shadow: 0 0 20px rgba(142, 36, 170, 0.45); }
 }
 
 /* 拖曳盤子元素 */
 .l3-plates-area {
   display: flex;
   gap: 24px;
-  margin-top: 20px;
-  min-height: 100px;
+  margin-top: 24px;
+  min-height: 90px;
+  justify-content: center;
+  align-items: center;
 }
 
 .l3-plate {
   width: 74px;
   height: 74px;
   background: linear-gradient(135deg, #f7f3ff 0%, #dcd3f5 100%);
-  border: 2px solid #b7a9de;
+  border: 2.5px solid #b7a9de;
   border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 6px 14px rgba(93, 64, 55, 0.18);
   cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
-  touch-action: none; /* 禁用預設觸控 */
-  transition: transform 0.15s, box-shadow 0.15s;
+  touch-action: none !important; /* 強制禁用瀏覽器預設手勢，確保平板拖曳百分百順暢 */
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
   position: relative;
   z-index: 5;
 }
@@ -1661,18 +1689,41 @@ input:checked + .slider:before {
 }
 
 .l3-plate.dragged {
-  transform: scale(1.1);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+  transform: scale(1.15) !important;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35) !important;
+  z-index: 20 !important;
+  cursor: grabbing;
 }
 
+/* 點擊選中狀態：浮起發光，支援點選即放置 */
+.l3-plate.selected {
+  border-color: #8e24aa !important;
+  box-shadow: 0 0 0 4px rgba(142, 36, 170, 0.4), 0 10px 24px rgba(142, 36, 170, 0.35) !important;
+  animation: plateFloat 1.2s infinite ease-in-out;
+  z-index: 10;
+}
+
+@keyframes plateFloat {
+  0%, 100% { transform: translateY(-6px) scale(1.08); }
+  50% { transform: translateY(-12px) scale(1.12); }
+}
+
+/* 已放置狀態：置於數線上，點擊可快速收回 */
 .l3-plate.placed {
   position: absolute !important;
-  cursor: default;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  border-color: var(--success-color);
-  background: linear-gradient(135deg, #e6fff7 0%, #b3ffd9 100%);
+  cursor: pointer !important; /* 提示點擊可收回重放 */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+  border-color: #2e7d32;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
   transform: translate(-50%, -35px) !important;
   top: 2px !important;
+  z-index: 8;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.l3-plate.placed:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
 }
 
 /* 第四關：天平比大小 */

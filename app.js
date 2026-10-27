@@ -2533,6 +2533,13 @@ const GameApp = {
     if (GameState.gameMode === 'battle') {
       if (!GameState.currentPlayer || GameState.isThinkingPhase) return;
     }
+    // 支援第 3 關數線分數盤子快捷選取
+    const plates = Array.from(this.workspaceArea.querySelectorAll('.l3-plate:not(.placed)'));
+    if (plates.length > 0 && plates[idx]) {
+      plates[idx].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      plates[idx].dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+      return;
+    }
     const optionBtns = Array.from(this.workspaceArea.querySelectorAll('.l1-option-btn, .l4-op-btn'));
     if (optionBtns[idx] && !optionBtns[idx].disabled && !optionBtns[idx].classList.contains('disabled')) {
       optionBtns[idx].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
@@ -4827,13 +4834,14 @@ const GameApp = {
     const belt = document.createElement('div');
     belt.className = 'l3-conveyor-belt';
 
-    const width = 800;
-    const offset = 50;
+    // 改採百分比響應式佈局，完美相容平板 (iPad / Android 平板) 與任何視窗尺寸
+    const startPct = 7;
+    const totalPct = 86;
 
     const swissRollImg = document.createElement('div');
     swissRollImg.style.position = 'absolute';
-    swissRollImg.style.left = `${offset}px`;
-    swissRollImg.style.width = `${width - offset * 2}px`;
+    swissRollImg.style.left = `${startPct}%`;
+    swissRollImg.style.width = `${totalPct}%`;
     swissRollImg.style.height = '40px';
     swissRollImg.style.background = 'repeating-linear-gradient(90deg, #d2b48c, #d2b48c 35px, #8b4513 35px, #8b4513 70px)';
     swissRollImg.style.borderRadius = '20px';
@@ -4843,30 +4851,29 @@ const GameApp = {
 
     const axis = document.createElement('div');
     axis.className = 'l3-axis';
-    axis.style.left = `${offset}px`;
-    axis.style.right = `${offset}px`;
+    axis.style.left = `${startPct}%`;
+    axis.style.width = `${totalPct}%`;
     belt.appendChild(axis);
 
     const q = GameState.getCurrentQuestion();
     const ticksCount = 10;
-    const beltWidth = width - offset * 2;
 
     for (let i = 0; i <= ticksCount; i++) {
       const pct = i / ticksCount;
-      const leftPos = offset + pct * beltWidth;
+      const leftPosPct = startPct + pct * totalPct;
 
       const tick = document.createElement('div');
       tick.className = 'l3-tick';
-      tick.style.left = `${leftPos}px`;
+      tick.style.left = `${leftPosPct}%`;
       belt.appendChild(tick);
 
       const target = q.targets.find(t => Math.round(t.ratio * ticksCount) === i);
 
       const label = document.createElement('div');
       label.className = 'l3-tick-label';
-      label.style.left = `${leftPos}px`;
+      label.style.left = `${leftPosPct}%`;
       if (target) {
-        // 目標放置刻度不直接印出答案分數，以鮮明三角箭頭導引學生從 0 逐格計數
+        // 目標放置刻度以醒目粉色三角箭頭導引學生由 0 逐格計數
         label.innerHTML = `<span style="color:#d63e8a; font-weight:900; font-size:1.1rem;" title="目標放置處">▲</span>`;
       } else if (i === 0) {
         label.textContent = '0';
@@ -4885,9 +4892,32 @@ const GameApp = {
       if (target) {
         const dropzone = document.createElement('div');
         dropzone.className = 'l3-dropzone';
-        dropzone.style.left = `${leftPos}px`;
+        dropzone.style.left = `${leftPosPct}%`;
         dropzone.dataset.label = target.label;
         dropzone.innerHTML = '?';
+
+        // 支援點選目標圈直接放置（Tap-to-Place）
+        const handleZoneClick = (e) => {
+          e.stopPropagation();
+          const selectedPlate = document.querySelector('.l3-plate.selected:not(.placed)');
+          if (selectedPlate && typeof this.placePlateInZone === 'function') {
+            this.placePlateInZone(selectedPlate, dropzone, belt);
+          } else {
+            // 若尚未選取盤子，自動選取第一個尚未放置的盤子提示學生
+            const firstUnplaced = document.querySelector('.l3-plate:not(.placed)');
+            if (firstUnplaced) {
+              document.querySelectorAll('.l3-plate').forEach(p => p.classList.remove('selected'));
+              firstUnplaced.classList.add('selected');
+              this.updateDropzoneHints(belt);
+              AudioSynth.playClick();
+              SpeechManager.speak("已為你選取分數盤子，請再點一次目標圈圈放入！");
+            }
+          }
+        };
+
+        dropzone.addEventListener('pointerdown', handleZoneClick);
+        dropzone.addEventListener('click', handleZoneClick);
+
         belt.appendChild(dropzone);
       }
     }
@@ -5455,128 +5485,222 @@ const GameApp = {
     if (panRight) panRight.style.transform = `rotate(${-deg}deg)`;
   },
 
+  // ==========================================
+  // 第 3 關：輸送帶數線拖曳與點選放置核心機制 (支援平板觸控與雙軌作答)
+  // ==========================================
+
+  // 更新數線上目標圈圈的閃爍提示
+  updateDropzoneHints(belt) {
+    if (!belt) return;
+    const selectedPlate = document.querySelector('.l3-plate.selected:not(.placed)');
+    const dropzones = belt.querySelectorAll('.l3-dropzone');
+    dropzones.forEach(zone => {
+      const isAlreadyOccupied = GameState.dragPlacements && GameState.dragPlacements[zone.dataset.label];
+      if (selectedPlate && !isAlreadyOccupied) {
+        zone.classList.add('target-hint');
+      } else {
+        zone.classList.remove('target-hint');
+      }
+    });
+  },
+
+  // 將指定盤子放入指定的數線 dropzone (平滑吸附與百分比對齊)
+  placePlateInZone(plate, zone, belt) {
+    if (!plate || !zone || !belt) return;
+
+    // 若該 dropzone 已有其他盤子，先將原盤子收回托盤
+    for (let key in GameState.dragPlacements) {
+      if (key === zone.dataset.label) {
+        const oldPlate = belt.querySelector(`.l3-plate.placed[data-label="${GameState.dragPlacements[key]}"]`);
+        if (oldPlate) this.recallPlate(oldPlate, belt);
+      }
+    }
+
+    belt.appendChild(plate);
+    plate.classList.add('placed');
+    plate.classList.remove('selected', 'dragged');
+    plate.style.position = 'absolute';
+    plate.style.left = zone.style.left; // 百分比精準居中對齊
+    plate.style.top = '2px';
+    plate.style.transform = '';
+
+    GameState.dragPlacements[zone.dataset.label] = plate.dataset.label;
+    zone.style.opacity = '0';
+
+    AudioSynth.playClick();
+    this.updateDropzoneHints(belt);
+
+    const q = GameState.getCurrentQuestion();
+    const placedCount = Object.keys(GameState.dragPlacements).length;
+    if (placedCount === q.targets.length) {
+      this.submitBtn.disabled = false;
+      AudioSynth.playTone(523.25, 0.15, 'triangle'); // C5 解鎖提示音
+    }
+  },
+
+  // 將已放置在數線上的盤子快速收回下方托盤 (一鍵撤銷修改)
+  recallPlate(plate, belt) {
+    if (!plate) return;
+    plate.classList.remove('placed', 'selected', 'dragged');
+    plate.style.position = 'static';
+    plate.style.left = 'auto';
+    plate.style.top = 'auto';
+    plate.style.transform = '';
+
+    const platesArea = document.querySelector('.l3-plates-area');
+    if (platesArea) platesArea.appendChild(plate);
+
+    for (let key in GameState.dragPlacements) {
+      if (GameState.dragPlacements[key] === plate.dataset.label) {
+        delete GameState.dragPlacements[key];
+        const zone = belt.querySelector(`.l3-dropzone[data-label="${key}"]`);
+        if (zone) zone.style.opacity = '1';
+      }
+    }
+
+    AudioSynth.playClick();
+    this.submitBtn.disabled = true;
+    this.updateDropzoneHints(belt);
+  },
+
+  // 雙軌互動綁定：手指拖曳 (Drag & Drop) ＋ 輕觸點選吸附 (Tap to Select / Tap to Place)
   initDragAndDrop(plate, belt) {
     let isDragging = false;
+    let hasMoved = false;
     let startX = 0, startY = 0;
     let currentTx = 0, currentTy = 0;
 
-    plate.addEventListener('pointerdown', (e) => {
+    const handlePointerDown = (e) => {
       e.stopPropagation();
-      AudioSynth.playClick();
-      
-      if (plate.classList.contains('placed')) {
-        plate.classList.remove('placed');
-        plate.style.position = 'static';
-        plate.style.left = 'auto';
-        plate.style.top = 'auto';
-        
-        const platesArea = document.querySelector('.l3-plates-area');
-        if (platesArea) platesArea.appendChild(plate);
 
-        for (let key in GameState.dragPlacements) {
-          if (GameState.dragPlacements[key] === plate.dataset.label) {
-            delete GameState.dragPlacements[key];
-            const zone = belt.querySelector(`.l3-dropzone[data-label="${key}"]`);
-            if (zone) zone.style.opacity = '1';
-          }
-        }
-        this.submitBtn.disabled = true;
+      // 若該盤子已經放置在數線上，點擊即快速收回托盤
+      if (plate.classList.contains('placed')) {
+        this.recallPlate(plate, belt);
+        SpeechManager.speak("已收回盤子，可重新放置！");
+        return;
       }
 
       isDragging = true;
-      plate.classList.add('dragged');
-      plate.style.touchAction = 'none';
-      plate.setPointerCapture(e.pointerId);
-
+      hasMoved = false;
       startX = e.clientX;
       startY = e.clientY;
       currentTx = 0;
       currentTy = 0;
-    });
 
-    plate.addEventListener('pointermove', (e) => {
+      plate.style.touchAction = 'none';
+      try {
+        plate.setPointerCapture(e.pointerId);
+      } catch (err) {
+        // 部分環境忽略指針捕獲例外
+      }
+    };
+
+    const handlePointerMove = (e) => {
       if (!isDragging) return;
       e.stopPropagation();
 
       currentTx = e.clientX - startX;
       currentTy = e.clientY - startY;
 
-      plate.style.transform = `translate(${currentTx}px, ${currentTy}px) scale(1.1)`;
+      // 移動超過 6px 認定為真正拖曳行為
+      if (!hasMoved && Math.hypot(currentTx, currentTy) > 6) {
+        hasMoved = true;
+        plate.classList.add('dragged');
+        // 拖曳時取消所有盤子的選中高亮
+        document.querySelectorAll('.l3-plate').forEach(p => p.classList.remove('selected'));
+        this.updateDropzoneHints(belt);
+      }
 
-      const dropzones = belt.querySelectorAll('.l3-dropzone');
-      dropzones.forEach(zone => {
-        const zoneRect = zone.getBoundingClientRect();
-        const plateRect = plate.getBoundingClientRect();
+      if (hasMoved) {
+        plate.style.transform = `translate(${currentTx}px, ${currentTy}px) scale(1.15)`;
 
-        const isOverlap = !(
-          plateRect.right < zoneRect.left ||
-          plateRect.left > zoneRect.right ||
-          plateRect.bottom < zoneRect.top ||
-          plateRect.top > zoneRect.bottom
-        );
+        const dropzones = belt.querySelectorAll('.l3-dropzone');
+        dropzones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          const plateRect = plate.getBoundingClientRect();
 
-        if (isOverlap) {
-          zone.classList.add('hovered');
-        } else {
-          zone.classList.remove('hovered');
-        }
-      });
-    });
+          const isOverlap = !(
+            plateRect.right < zoneRect.left ||
+            plateRect.left > zoneRect.right ||
+            plateRect.bottom < zoneRect.top ||
+            plateRect.top > zoneRect.bottom
+          );
 
-    plate.addEventListener('pointerup', (e) => {
+          if (isOverlap) {
+            zone.classList.add('hovered');
+          } else {
+            zone.classList.remove('hovered');
+          }
+        });
+      }
+    };
+
+    const handlePointerUp = (e) => {
       if (!isDragging) return;
       isDragging = false;
       plate.classList.remove('dragged');
-      plate.releasePointerCapture(e.pointerId);
+      try {
+        plate.releasePointerCapture(e.pointerId);
+      } catch (err) {}
 
       const dropzones = belt.querySelectorAll('.l3-dropzone');
-      let matchedZone = null;
+      dropzones.forEach(z => z.classList.remove('hovered'));
 
-      dropzones.forEach(zone => {
-        const zoneRect = zone.getBoundingClientRect();
-        const plateRect = plate.getBoundingClientRect();
+      if (hasMoved) {
+        // === 行為 A：手指拖曳放下 ===
+        let matchedZone = null;
+        dropzones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          const plateRect = plate.getBoundingClientRect();
 
-        const isOverlap = !(
-          plateRect.right < zoneRect.left ||
-          plateRect.left > zoneRect.right ||
-          plateRect.bottom < zoneRect.top ||
-          plateRect.top > zoneRect.bottom
-        );
+          const isOverlap = !(
+            plateRect.right < zoneRect.left ||
+            plateRect.left > zoneRect.right ||
+            plateRect.bottom < zoneRect.top ||
+            plateRect.top > zoneRect.bottom
+          );
 
-        if (isOverlap) {
-          matchedZone = zone;
-        }
-        zone.classList.remove('hovered');
-      });
+          if (isOverlap) {
+            matchedZone = zone;
+          }
+        });
 
-      plate.style.transform = '';
-
-      if (matchedZone) {
-        belt.appendChild(plate);
-        plate.classList.add('placed');
-        
-        const beltRect = belt.getBoundingClientRect();
-        const zoneRect = matchedZone.getBoundingClientRect();
-        
-        plate.style.position = 'absolute';
-        plate.style.left = `${zoneRect.left - beltRect.left + zoneRect.width / 2}px`;
-        plate.style.top = '2px';
-
-        GameState.dragPlacements[matchedZone.dataset.label] = plate.dataset.label;
-        matchedZone.style.opacity = '0';
-        
-        const q = GameState.getCurrentQuestion();
-        const placedCount = Object.keys(GameState.dragPlacements).length;
-        if (placedCount === q.targets.length) {
-          this.submitBtn.disabled = false;
+        if (matchedZone) {
+          this.placePlateInZone(plate, matchedZone, belt);
+        } else {
+          // 未拖到目標圈，彈性還原原位
+          plate.style.transform = '';
+          AudioSynth.playTone(200, 0.08, 'sine');
         }
       } else {
-        plate.style.position = 'static';
-        plate.style.left = 'auto';
-        plate.style.top = 'auto';
-        this.submitBtn.disabled = true;
+        // === 行為 B：單純點擊 / 輕觸 (Tap-to-Place 選取) ===
+        plate.style.transform = '';
+        AudioSynth.playClick();
+
+        const wasSelected = plate.classList.contains('selected');
+        document.querySelectorAll('.l3-plate').forEach(p => p.classList.remove('selected'));
+
+        if (!wasSelected) {
+          plate.classList.add('selected');
+          SpeechManager.speak("已選取，請點擊數線上的圈圈放置！");
+        }
+        this.updateDropzoneHints(belt);
       }
-    });
+    };
+
+    const handlePointerCancel = () => {
+      isDragging = false;
+      hasMoved = false;
+      plate.classList.remove('dragged');
+      plate.style.transform = '';
+      const dropzones = belt.querySelectorAll('.l3-dropzone');
+      dropzones.forEach(z => z.classList.remove('hovered'));
+    };
+
+    plate.addEventListener('pointerdown', handlePointerDown);
+    plate.addEventListener('pointermove', handlePointerMove);
+    plate.addEventListener('pointerup', handlePointerUp);
+    plate.addEventListener('pointercancel', handlePointerCancel);
   },
 
   // ==========================================
