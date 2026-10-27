@@ -1355,47 +1355,64 @@ input:checked + .slider:before {
   text-decoration: line-through;
 }
 
-/* 第二關：包裝盒 */
+/* 第二關：包裝盒 (改為水平橫向並排：左禮盒、右選項，徹底消除垂直滾動條) */
 .level2-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: center;
   align-items: center;
-  gap: 16px;
+  gap: 32px;
   width: 100%;
+  max-width: 920px;
   margin: auto;
   min-height: 0;
 }
 
-/* 提案 1：外盒實體化——厚實溫潤烘焙禮盒 */
+/* 第二關容器內的選項按鈕自動改為精緻直欄排列 */
+.level2-container .l1-options-area {
+  display: flex;
+  flex-direction: column !important;
+  gap: 10px;
+  margin-top: 0 !important;
+  min-width: 210px;
+}
+
+.level2-container .l1-option-btn {
+  padding: 10px 18px;
+  font-size: 1.15rem;
+  min-height: 44px;
+}
+
+/* 提案 1：外盒實體化——厚實溫潤烘焙禮盒 (緊湊精美版) */
 .l2-box {
   background: linear-gradient(145deg, #fffcf7 0%, #faedd9 100%);
-  border: 3.5px solid #a06b3a;
-  border-radius: 18px;
-  padding: 24px 20px 20px 20px;
+  border: 3px solid #a06b3a;
+  border-radius: 16px;
+  padding: 18px 16px 14px 16px;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   position: relative;
   justify-content: center;
   align-items: center;
   box-shadow: 
-    0 8px 24px rgba(138, 86, 40, 0.16),
+    0 6px 18px rgba(138, 86, 40, 0.14),
     inset 0 2px 4px rgba(255, 255, 255, 0.9),
-    inset 0 -3px 0 rgba(160, 107, 58, 0.12);
+    inset 0 -2px 0 rgba(160, 107, 58, 0.12);
 }
 
 /* 提案 4：標籤語意化——醒目禮盒銘牌（完整 1 盒） */
 .l2-box-badge {
   position: absolute;
-  top: -15px;
-  left: 20px;
+  top: -13px;
+  left: 16px;
   background: linear-gradient(135deg, #8d4f24 0%, #5f3211 100%);
   color: #fffdf9;
-  padding: 4px 14px;
-  border-radius: 12px;
-  font-size: 0.92rem;
+  padding: 3px 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
   font-weight: 800;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 10px rgba(95, 50, 17, 0.35);
+  box-shadow: 0 3px 8px rgba(95, 50, 17, 0.3);
   border: 1.5px solid rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
@@ -1405,13 +1422,13 @@ input:checked + .slider:before {
 }
 
 .l2-box-badge .l2-badge-sub {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   opacity: 0.92;
   color: #ffe0b2;
 }
 
-/* 提案 2：分母結構化——點心內襯格位（烘焙隔板槽） */
+/* 提案 2：分母結構化——點心內襯格位（精巧烘焙隔板槽） */
 .l2-item-wrapper {
   position: relative;
   cursor: pointer;
@@ -1419,14 +1436,18 @@ input:checked + .slider:before {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 72px;
-  height: 72px;
-  background: rgba(255, 255, 255, 0.9);
+  width: 58px;
+  height: 58px;
+  background: rgba(255, 255, 255, 0.92);
   border: 2px solid #dfc9ae;
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: 
     inset 0 2px 4px rgba(160, 107, 58, 0.08),
     0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.l2-item-wrapper .l2-item {
+  font-size: 1.85rem !important;
 }
 
 .l2-item-wrapper:hover {
@@ -2370,30 +2391,30 @@ input:checked + .slider:before {
 /* ==================== 甜點輸送帶拔河軌道儀表板 ==================== */
 .conveyor-tug-war {
   background: linear-gradient(180deg, #FFF9F2 0%, #FFFDF9 100%);
-  border: 2.5px solid #d7ccc8;
-  border-radius: 20px;
-  padding: 12px 18px;
-  margin: 0 auto 12px auto;
+  border: 2px solid #d7ccc8;
+  border-radius: 16px;
+  padding: 6px 14px;
+  margin: 0 auto 6px auto;
   width: 95%;
   max-width: 960px;
-  box-shadow: 0 4px 18px rgba(93, 64, 55, 0.1);
+  box-shadow: 0 3px 12px rgba(93, 64, 55, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 3px;
 }
 
 .tug-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .tug-team {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 170px;
+  gap: 8px;
+  min-width: 150px;
 }
 
 .tug-team.team-player {
@@ -2405,7 +2426,7 @@ input:checked + .slider:before {
 }
 
 .tug-avatar {
-  font-size: 2.4rem;
+  font-size: 1.7rem;
   display: inline-block;
   transition: transform 0.3s ease;
 }
@@ -2413,7 +2434,7 @@ input:checked + .slider:before {
 .tug-team-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .tug-team-info.right-align {
@@ -2422,28 +2443,28 @@ input:checked + .slider:before {
 }
 
 .tug-name {
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: var(--text-color);
 }
 
 .tug-score-badge {
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #2E7D32;
   background: #E8F5E9;
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 1px 6px;
+  border-radius: 10px;
   display: inline-block;
 }
 
 .tug-thinking-badge {
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #e65100;
   background: #fff3e0;
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 1px 6px;
+  border-radius: 10px;
   display: inline-block;
   transition: all 0.2s ease;
 }
@@ -2454,33 +2475,33 @@ input:checked + .slider:before {
 }
 
 .tug-status-text {
-  font-size: 1.02rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: #6a1b9a;
   background: rgba(156, 39, 176, 0.08);
-  padding: 4px 14px;
-  border-radius: 20px;
+  padding: 2px 10px;
+  border-radius: 16px;
   display: inline-block;
   border: 1px solid rgba(156, 39, 176, 0.2);
 }
 
-/* 輸送帶軌道與齒輪 */
+/* 輸送帶軌道與齒輪 (緊湊精緻版) */
 .conveyor-track-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 2px 0;
+  gap: 6px;
+  padding: 1px 0;
 }
 
 .gear {
-  font-size: 2.2rem;
+  font-size: 1.5rem;
   user-select: none;
   animation: gearSpin 6s linear infinite;
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.12));
 }
 
 .gear-left {
@@ -2495,18 +2516,18 @@ input:checked + .slider:before {
 .conveyor-track {
   position: relative;
   flex: 1;
-  height: 64px;
+  height: 38px;
   background: repeating-linear-gradient(
     90deg,
     #5d4037,
-    #5d4037 12px,
-    #4e342e 12px,
-    #4e342e 24px
+    #5d4037 10px,
+    #4e342e 10px,
+    #4e342e 20px
   );
-  border: 3px solid #3e2723;
-  border-radius: 14px;
+  border: 2px solid #3e2723;
+  border-radius: 10px;
   overflow: visible;
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.4), 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4), 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
 /* 刻度標記 */
@@ -2519,77 +2540,77 @@ input:checked + .slider:before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 12px;
   pointer-events: none;
 }
 
 .track-marker {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.65);
   text-align: center;
-  line-height: 1.1;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   position: relative;
   z-index: 2;
 }
 
 .track-marker.zero-point {
   color: #ffd54f;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
 }
 
 .track-marker.win-point-left {
   color: #81c784;
   font-weight: 900;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
 }
 
 .track-marker.win-point-right {
   color: #ff8a65;
   font-weight: 900;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
 }
 
-/* 滑動聖代本體 (left 百分比動態控制) */
+/* 滑動聖代本體 (緊湊精美版) */
 .conveyor-sundae {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 58px;
-  height: 58px;
+  width: 44px;
+  height: 44px;
   background: radial-gradient(circle, #ffffff 40%, #fff8e1 100%);
-  border: 3px solid #ffb300;
+  border: 2.5px solid #ffb300;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 18px rgba(255, 179, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 14px rgba(255, 179, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.3);
   transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 10;
   cursor: pointer;
 }
 
 .conveyor-sundae .sundae-icon {
-  font-size: 2.2rem;
+  font-size: 1.65rem;
   animation: floatSundae 2s infinite ease-in-out;
 }
 
 @keyframes floatSundae {
   0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-3px) scale(1.06); }
+  50% { transform: translateY(-2px) scale(1.06); }
 }
 
-/* 狐狸思考進度條 */
+/* 狐狸思考進度條 (細緻融入版) */
 .ai-timer-bar-wrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 2px 4px;
+  gap: 8px;
+  padding: 0 2px;
 }
 
 .ai-timer-label {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #d84315;
   white-space: nowrap;
@@ -2597,11 +2618,11 @@ input:checked + .slider:before {
 
 .ai-timer-track {
   flex: 1;
-  height: 8px;
+  height: 6px;
   background: #ffe0b2;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .ai-timer-fill {
@@ -2833,5 +2854,97 @@ input:checked + .slider:before {
     grid-template-columns: 1fr;
     gap: 10px;
   }
+}
+
+/* ==========================================================
+   單人 AI 拔河對戰專屬：全畫布免滾動自適應佈局
+   徹底消除題目、圖形與選項上下被截斷或滾動的問題
+   ========================================================== */
+.ai-challenge-active .game-main {
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+.ai-challenge-active .question-banner {
+  padding: 6px 14px;
+  min-height: 42px;
+  margin-bottom: 4px;
+}
+
+.ai-challenge-active .question-desc {
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.ai-challenge-active .message-banner {
+  padding: 4px 12px;
+  margin-bottom: 3px;
+  font-size: 0.88rem;
+}
+
+.ai-challenge-active .play-content-row {
+  margin-bottom: 4px;
+  flex: 1;
+}
+
+.ai-challenge-active .workspace {
+  padding: 6px 12px;
+  overflow: hidden; /* 在拔河對抗中防止出現干擾作答的灰色滾動條 */
+}
+
+/* 第二關包裝盒在拔河模式下保證水平並排且緊湊 */
+.ai-challenge-active .level2-container {
+  gap: 24px;
+}
+
+.ai-challenge-active .l2-box {
+  padding: 12px 12px 10px 12px;
+  gap: 8px;
+}
+
+.ai-challenge-active .l2-item-wrapper {
+  width: 52px;
+  height: 52px;
+}
+
+.ai-challenge-active .l2-item-wrapper .l2-item {
+  font-size: 1.7rem !important;
+}
+
+.ai-challenge-active .l1-option-btn {
+  padding: 8px 16px;
+  font-size: 1.1rem;
+  min-height: 38px;
+}
+
+/* 第四關天平在拔河模式下微縮放，保持 100% 完整免滾動 */
+.ai-challenge-active .l4-scale-system {
+  transform: scale(0.85);
+  margin-bottom: -6px;
+  transform-origin: center center;
+}
+
+.ai-challenge-active .l4-operations {
+  margin-top: -6px;
+}
+
+/* 第三關數線在拔河模式下緊湊化 */
+.ai-challenge-active .level3-container {
+  padding: 8px 0;
+}
+
+.ai-challenge-active .l3-conveyor-belt {
+  height: 105px;
+}
+
+.ai-challenge-active .l3-plates-area {
+  margin-top: 12px;
+  min-height: 70px;
+  gap: 16px;
+}
+
+.ai-challenge-active .l3-plate {
+  width: 64px;
+  height: 64px;
 }
 

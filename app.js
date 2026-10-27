@@ -1902,6 +1902,7 @@ const GameApp = {
   },
 
   startGame() {
+    if (this.playScreen) this.playScreen.classList.remove('ai-challenge-active');
     // 移除 GameState.reset() 的直接調用，因為 reset 已經被搬到首頁按鈕點選時了！
     // 這樣在自學關卡選擇特定的 currentLevelIdx 才不會被洗掉！
     
@@ -2029,6 +2030,7 @@ const GameApp = {
     GameState.aiFoxPulls = 0;
 
     // 介面切換
+    if (this.playScreen) this.playScreen.classList.add('ai-challenge-active');
     this.battlePlayersPanel.classList.add('hidden');
     document.getElementById('learn-status-tracker').classList.add('hidden');
     this.levelLabelDisplay.style.display = 'none';
