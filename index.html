@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@300..700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4.0">
+  <link rel="stylesheet" href="style.css?v=4.2">
 </head>
 <body>
   <!-- 魔法粒子背景容器 -->
@@ -138,29 +138,32 @@
 
     <!-- 3-B. 單人 AI 挑戰賽設定畫面 -->
     <section id="ai-setup-screen" class="screen">
-      <div class="welcome-card setup-card" style="max-width: 680px;">
+      <div class="welcome-card setup-card ai-setup-card">
         <div class="magic-badge">🦊 甜點輸送帶大拔河</div>
         <h2 class="setup-title">單人 vs AI 挑戰賽</h2>
         <p class="setup-subtitle">隔壁街的「🦊 狡猾狐狸店長」來搶奪傳奇彩虹聖代了！請點選挑戰難度：</p>
         
         <div class="ai-difficulty-grid">
-          <button class="ai-diff-card" data-diff="easy">
-            <div class="ai-diff-badge">⭐ 輕鬆練習</div>
+          <button class="ai-diff-card" data-diff="easy" title="快速鍵：按數字 1 鍵選取">
+            <div class="ai-diff-badge">⭐ 輕鬆練習 <span style="font-size:0.75rem;opacity:0.8;">[1]</span></div>
             <div class="ai-diff-avatar">🦊☕</div>
             <div class="ai-diff-name">見習烘焙學徒</div>
             <div class="ai-diff-desc">思考時間 12～15 秒<br>偶爾會烤焦失誤，落後會放水</div>
+            <div class="ai-diff-action-hint">點擊出發 ➔</div>
           </button>
-          <button class="ai-diff-card active" data-diff="normal">
-            <div class="ai-diff-badge">⭐⭐ 標準對抗</div>
+          <button class="ai-diff-card active" data-diff="normal" title="快速鍵：按數字 2 鍵選取">
+            <div class="ai-diff-badge">⭐⭐ 標準對抗 <span style="font-size:0.75rem;opacity:0.8;">[2]</span></div>
             <div class="ai-diff-avatar">🦊👔</div>
             <div class="ai-diff-name">熟練甜點師傅</div>
             <div class="ai-diff-desc">思考時間 8～10 秒<br>解題配速穩定，適度緊張感</div>
+            <div class="ai-diff-action-hint">👈 目前選中</div>
           </button>
-          <button class="ai-diff-card" data-diff="hard">
-            <div class="ai-diff-badge">⭐⭐⭐ 極限挑戰</div>
+          <button class="ai-diff-card" data-diff="hard" title="快速鍵：按數字 3 鍵選取">
+            <div class="ai-diff-badge">⭐⭐⭐ 極限挑戰 <span style="font-size:0.75rem;opacity:0.8;">[3]</span></div>
             <div class="ai-diff-avatar">🦊👑</div>
             <div class="ai-diff-name">傳奇狡猾主廚</div>
             <div class="ai-diff-desc">思考時間 4.5～6.5 秒<br>零失誤神速解題，頂尖考驗</div>
+            <div class="ai-diff-action-hint">點擊出發 ➔</div>
           </button>
         </div>
 
@@ -170,12 +173,12 @@
           <div class="rule-item">💡 <strong>教學保護</strong>：若你答錯，AI 會自動暫停思考，讓你安心看懂迷思提示！</div>
         </div>
 
-        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 25px; width: 100%;">
-          <button id="back-to-menu-from-ai-btn" class="magic-btn btn-danger" style="flex: 1; max-width: 160px;">
+        <div class="ai-setup-actions" style="display: flex; gap: 16px; justify-content: center; margin-top: 14px; width: 100%;">
+          <button id="back-to-menu-from-ai-btn" class="magic-btn btn-danger" style="flex: 1; max-width: 150px; padding: 10px 16px;">
             🏠 回首頁
           </button>
-          <button id="start-ai-challenge-btn" class="magic-btn btn-large btn-purple" style="flex: 2; max-width: 280px;">
-            🚀 開始拔河對決！
+          <button id="start-ai-challenge-btn" class="magic-btn btn-large btn-purple pulse-btn" style="flex: 2; max-width: 330px; padding: 10px 20px; font-size: 1.15rem;">
+            🚀 開始拔河對決（熟練甜點師傅）
           </button>
         </div>
       </div>
@@ -587,6 +590,6 @@
 
   </div>
 
-  <script src="app.js?v=4.1"></script>
+  <script src="app.js?v=4.2"></script>
 </body>
 </html>

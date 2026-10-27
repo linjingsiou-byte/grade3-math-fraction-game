@@ -1454,26 +1454,90 @@ const GameApp = {
       });
     }
 
+    // AI 難度選擇與即時更新輔助函式
+    const updateAiDifficultyUI = (diff, triggerSpeech = true) => {
+      GameState.aiDifficulty = diff;
+      const diffNames = { easy: "見習烘焙學徒", normal: "熟練甜點師傅", hard: "傳奇狡猾主廚" };
+      const selectedName = diffNames[diff] || "熟練甜點師傅";
+
+      if (this.aiDiffCards) {
+        this.aiDiffCards.forEach(c => {
+          const isCurrent = c.dataset.diff === diff;
+          c.classList.toggle('active', isCurrent);
+          const hintEl = c.querySelector('.ai-diff-action-hint');
+          if (hintEl) {
+            hintEl.textContent = isCurrent ? "👈 目前選中 (再點即出發)" : "點擊出發 ➔";
+          }
+        });
+      }
+
+      if (this.startAiChallengeBtn) {
+        this.startAiChallengeBtn.innerHTML = `🚀 開始拔河對決（${selectedName}）`;
+        this.startAiChallengeBtn.classList.remove('btn-pop');
+        void this.startAiChallengeBtn.offsetWidth; // 強制重繪以觸發動畫
+        this.startAiChallengeBtn.classList.add('btn-pop');
+      }
+
+      if (triggerSpeech) {
+        SpeechManager.speak(`已選擇${selectedName}！點擊按鈕或再次點擊卡片出發！`);
+      }
+    };
+
+    // 綁定難度卡片點擊事件（支援點選選中、再次點選直接出發、雙擊出發）
     if (this.aiDiffCards) {
       this.aiDiffCards.forEach(card => {
-        card.addEventListener('pointerdown', (e) => {
+        let lastCardClickTime = 0;
+        const handleCardAction = (e) => {
+          const now = Date.now();
+          if (now - lastCardClickTime < 250) return; // 250ms 防連點跳動
+          lastCardClickTime = now;
+
+          if (e) {
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+          }
+
+          const targetDiff = card.dataset.diff;
+          const isAlreadyActive = card.classList.contains('active') && GameState.aiDifficulty === targetDiff;
+
+          if (isAlreadyActive) {
+            // 已選中狀態下再次點擊 -> 直接開始拔河對決！
+            AudioSynth.playClick();
+            this.startAiChallenge();
+          } else {
+            // 未選中狀態 -> 切換選中並即時提示
+            AudioSynth.playClick();
+            updateAiDifficultyUI(targetDiff, true);
+          }
+        };
+
+        card.addEventListener('pointerdown', handleCardAction);
+        card.addEventListener('click', handleCardAction);
+        card.addEventListener('dblclick', (e) => {
           e.stopPropagation();
-          AudioSynth.playClick();
-          this.aiDiffCards.forEach(c => c.classList.remove('active'));
-          card.classList.add('active');
           GameState.aiDifficulty = card.dataset.diff;
-          const diffNames = { easy: "見習烘焙學徒", normal: "熟練甜點師傅", hard: "傳奇狡猾主廚" };
-          SpeechManager.speak(`已選擇難度：${diffNames[GameState.aiDifficulty]}`);
+          this.startAiChallenge();
         });
       });
     }
 
     if (this.startAiChallengeBtn) {
-      this.startAiChallengeBtn.addEventListener('pointerdown', (e) => {
-        e.stopPropagation();
+      let lastStartClick = 0;
+      const handleStartAction = (e) => {
+        const now = Date.now();
+        if (now - lastStartClick < 350) return;
+        lastStartClick = now;
+
+        if (e) {
+          if (e.cancelable) e.preventDefault();
+          e.stopPropagation();
+        }
         AudioSynth.playClick();
         this.startAiChallenge();
-      });
+      };
+
+      this.startAiChallengeBtn.addEventListener('pointerdown', handleStartAction);
+      this.startAiChallengeBtn.addEventListener('click', handleStartAction);
     }
 
     if (this.aiRestartBtn) {
@@ -1675,11 +1739,100 @@ const GameApp = {
       });
     }
 
-    // 7. 鍵盤監聽事件 (A 搶答, L 搶答, [1][2][3] 選項, Enter/Space 送出或下一題)
+    // 7. 全域鍵盤監聽事件 (設定頁快捷選取、A/L 搶答、[1][2][3] 選項、Enter/Space 送出或開始)
     window.addEventListener('keydown', (e) => {
-      if (!this.playScreen || !this.playScreen.classList.contains('active')) return;
       if (document.querySelector('.modal.active')) return;
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // (A) 單人 AI 拔河設定頁面快捷鍵
+      if (this.aiSetupScreen && this.aiSetupScreen.classList.contains('active')) {
+        if (['Digit1', 'Numpad1'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          updateAiDifficultyUI('easy', true);
+          return;
+        } else if (['Digit2', 'Numpad2'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          updateAiDifficultyUI('normal', true);
+          return;
+        } else if (['Digit3', 'Numpad3'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          updateAiDifficultyUI('hard', true);
+          return;
+        } else if (['Enter', 'NumpadEnter', 'Space'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startAiChallenge();
+          return;
+        } else if (e.code === 'Escape') {
+          e.preventDefault();
+          AudioSynth.playClick();
+          SpeechManager.stop();
+          this.clearAiThinkingTimer();
+          this.showScreen(this.welcomeScreen);
+          return;
+        }
+      }
+
+      // (B) 雙人對戰設定頁面快捷鍵
+      if (this.setupScreen && this.setupScreen.classList.contains('active')) {
+        if (['Digit1', 'Numpad1'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startBattle(10);
+          return;
+        } else if (['Digit2', 'Numpad2'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startBattle(20);
+          return;
+        } else if (['Digit3', 'Numpad3'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startBattle(30);
+          return;
+        } else if (e.code === 'Escape') {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.showScreen(this.welcomeScreen);
+          return;
+        }
+      }
+
+      // (C) 自學關卡選擇頁面快捷鍵
+      if (this.levelSelectScreen && this.levelSelectScreen.classList.contains('active')) {
+        if (['Digit1', 'Numpad1'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startLevel(0);
+          return;
+        } else if (['Digit2', 'Numpad2'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startLevel(1);
+          return;
+        } else if (['Digit3', 'Numpad3'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startLevel(2);
+          return;
+        } else if (['Digit4', 'Numpad4'].includes(e.code)) {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.startLevel(3);
+          return;
+        } else if (e.code === 'Escape') {
+          e.preventDefault();
+          AudioSynth.playClick();
+          this.showScreen(this.welcomeScreen);
+          return;
+        }
+      }
+
+      // 遊戲主畫面快捷操作（須在 playScreen active 時）
+      if (!this.playScreen || !this.playScreen.classList.contains('active')) return;
 
       // (1) 搶答鍵 (貓咪 A / 狗狗 L，僅限雙人對戰模式)
       if (GameState.gameMode === 'battle') {

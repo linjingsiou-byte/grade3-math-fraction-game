@@ -105,6 +105,25 @@ body {
   left: 0;
   flex-direction: column;
   padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 細緻柔和自訂滾動條 */
+.screen::-webkit-scrollbar {
+  width: 8px;
+}
+.screen::-webkit-scrollbar-track {
+  background: rgba(93, 64, 55, 0.04);
+  border-radius: 4px;
+}
+.screen::-webkit-scrollbar-thumb {
+  background: rgba(141, 110, 99, 0.25);
+  border-radius: 4px;
+}
+.screen::-webkit-scrollbar-thumb:hover {
+  background: rgba(141, 110, 99, 0.45);
 }
 
 .screen.active {
@@ -115,8 +134,11 @@ body {
   display: none !important;
 }
 
-/* 1. 歡迎首頁樣式 */
-#welcome-screen {
+/* 1. 歡迎首頁與所有設定選單畫面統一柔和居中背景 */
+#welcome-screen,
+#level-select-screen,
+#setup-screen,
+#ai-setup-screen {
   justify-content: center;
   align-items: center;
   background: radial-gradient(circle at center, var(--bg-secondary) 0%, var(--bg-color) 100%);
@@ -125,10 +147,12 @@ body {
 .welcome-card {
   text-align: center;
   width: 650px;
+  max-width: 95%;
+  margin: auto;
   background: rgba(255, 255, 255, 0.95);
   border: 2px solid var(--panel-border);
   border-radius: var(--border-radius-lg);
-  padding: 40px;
+  padding: 36px 32px;
   box-shadow: var(--shadow-magic);
   backdrop-filter: blur(8px);
   animation: scale-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -332,6 +356,8 @@ body {
 /* 2. 自學關卡選擇頁面樣式 */
 .level-select-card {
   width: 700px;
+  max-width: 95%;
+  margin: auto;
 }
 
 .level-cards-grid {
@@ -394,6 +420,8 @@ body {
 /* 3. 對戰設定畫面樣式 */
 .setup-card {
   width: 680px;
+  max-width: 95%;
+  margin: auto;
 }
 
 .setup-title {
@@ -2146,12 +2174,36 @@ input:checked + .slider:before {
   transform: translateY(-2px);
 }
 
+/* AI 挑戰專用設定卡片：緊湊自適應排版 */
+.ai-setup-card {
+  padding: 22px 28px !important;
+  max-width: 680px;
+  width: 95%;
+  margin: auto;
+}
+
+.ai-setup-card .magic-badge {
+  margin-bottom: 8px;
+  padding: 4px 14px;
+  font-size: 0.82rem;
+}
+
+.ai-setup-card .setup-title {
+  font-size: 1.85rem;
+  margin-bottom: 4px;
+}
+
+.ai-setup-card .setup-subtitle {
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
 /* AI 難度選擇卡片網格 */
 .ai-difficulty-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin: 20px 0;
+  gap: 12px;
+  margin: 10px 0;
   width: 100%;
 }
 
@@ -2159,69 +2211,109 @@ input:checked + .slider:before {
   background: #FFFDF9;
   border: 2.5px solid rgba(142, 36, 170, 0.2);
   border-radius: var(--border-radius-md);
-  padding: 18px 12px;
+  padding: 12px 10px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 5px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 4px 12px rgba(93, 64, 55, 0.06);
+  position: relative;
 }
 
 .ai-diff-card:hover {
   border-color: #ab47bc;
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(156, 39, 176, 0.2);
 }
 
 .ai-diff-card.active {
   border-color: #8e24aa;
   background: linear-gradient(180deg, #f3e5f5 0%, #fff 100%);
-  box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.3), 0 8px 22px rgba(142, 36, 170, 0.25);
-  transform: translateY(-3px);
+  box-shadow: 0 0 0 3px rgba(142, 36, 170, 0.35), 0 8px 22px rgba(142, 36, 170, 0.25);
+  transform: translateY(-2px);
 }
 
 .ai-diff-badge {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #7b1fa2;
   background: #ede7f6;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 20px;
 }
 
 .ai-diff-avatar {
-  font-size: 2.6rem;
-  margin: 4px 0;
+  font-size: 2.2rem;
+  margin: 2px 0;
 }
 
 .ai-diff-name {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-color);
 }
 
 .ai-diff-desc {
-  font-size: 0.92rem;
-  line-height: 1.45;
+  font-size: 0.82rem;
+  line-height: 1.35;
   color: var(--text-muted);
   text-align: center;
 }
 
+/* 難度卡片內的行動標籤提示 */
+.ai-diff-action-hint {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #8e24aa;
+  background: rgba(142, 36, 170, 0.1);
+  border-radius: 12px;
+  padding: 2px 8px;
+  margin-top: 4px;
+  transition: all 0.2s;
+}
+
+.ai-diff-card.active .ai-diff-action-hint {
+  background: #8e24aa;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(142, 36, 170, 0.3);
+}
+
 .ai-rules-card {
-  background: rgba(142, 36, 170, 0.06);
-  border: 1.5px dashed rgba(142, 36, 170, 0.35);
+  background: rgba(142, 36, 170, 0.05);
+  border: 1.5px dashed rgba(142, 36, 170, 0.3);
   border-radius: var(--border-radius-sm);
-  padding: 14px 18px;
-  margin: 15px 0;
+  padding: 8px 14px;
+  margin: 10px 0;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 0.98rem;
-  line-height: 1.5;
+  gap: 5px;
+  font-size: 0.88rem;
+  line-height: 1.4;
   color: var(--text-color);
+}
+
+/* 呼吸脈衝開始按鈕 */
+@keyframes btnPulse {
+  0% { transform: scale(1); box-shadow: 0 4px 15px rgba(142, 36, 170, 0.3); }
+  50% { transform: scale(1.03); box-shadow: 0 6px 22px rgba(142, 36, 170, 0.55); }
+  100% { transform: scale(1); box-shadow: 0 4px 15px rgba(142, 36, 170, 0.3); }
+}
+
+.pulse-btn {
+  animation: btnPulse 2s infinite ease-in-out;
+}
+
+@keyframes btnPop {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.btn-pop {
+  animation: btnPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ==================== 甜點輸送帶拔河軌道儀表板 ==================== */
@@ -2490,5 +2582,205 @@ input:checked + .slider:before {
 
 .fox-fail {
   animation: foxFail 0.5s ease-in-out !important;
+}
+
+/* ==========================================================
+   全站響應式設計 (Responsive Design) 媒體查詢
+   支援桌機、筆電 (1366x768 / 100vh ~ 600px)、平板與觸控大螢幕
+   ========================================================== */
+
+/* 1. 高度介於 620px ~ 740px 時的筆電緊湊適配 */
+@media (max-height: 740px) {
+  #game-container {
+    height: 100vh;
+    border-radius: 16px;
+    border-width: 2px;
+  }
+  .screen {
+    padding: 12px 16px;
+  }
+  .welcome-card {
+    padding: 18px 22px;
+  }
+  .game-title {
+    font-size: 2.2rem;
+    margin-bottom: 6px;
+  }
+  .game-subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+  .mascot-container {
+    margin-bottom: 12px;
+  }
+  .mascot-chat {
+    padding: 10px 16px;
+    font-size: 0.95rem;
+  }
+  .mascot-avatar {
+    font-size: 2.2rem;
+  }
+  
+  /* 自學關卡選擇與雙人對戰卡片緊湊化 */
+  .level-card-btn {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .level-card-emoji {
+    font-size: 2.2rem;
+  }
+  .dessert-btn {
+    height: 130px;
+    width: 125px;
+    gap: 8px;
+  }
+  .dessert-emoji {
+    font-size: 2.8rem;
+  }
+  .setup-subtitle {
+    margin-bottom: 16px;
+  }
+  
+  /* AI 挑戰設定緊湊化 */
+  .ai-setup-card {
+    padding: 14px 20px !important;
+  }
+  .ai-diff-avatar {
+    font-size: 1.8rem;
+  }
+  .ai-diff-card {
+    padding: 8px 6px;
+    gap: 3px;
+  }
+  .ai-rules-card {
+    padding: 6px 12px;
+    margin: 8px 0;
+    gap: 3px;
+    font-size: 0.82rem;
+  }
+  
+  /* 遊戲中拔河軌道儀表板緊湊化 */
+  .conveyor-tug-war {
+    padding: 6px 12px;
+    margin: 0 auto 6px auto;
+    gap: 4px;
+  }
+  .tug-header {
+    gap: 6px;
+  }
+  .tug-avatar {
+    font-size: 1.6rem;
+  }
+  .tug-name {
+    font-size: 0.95rem;
+  }
+  .conveyor-track-wrapper {
+    height: 38px;
+  }
+  .conveyor-track {
+    height: 28px;
+  }
+  .conveyor-sundae {
+    font-size: 1.8rem;
+  }
+  .track-marker {
+    font-size: 0.72rem;
+  }
+  .gear {
+    font-size: 1.2rem;
+  }
+  .question-banner {
+    padding: 6px 14px;
+    min-height: 48px;
+  }
+  .question-desc {
+    font-size: 1.15rem;
+  }
+  .game-footer {
+    padding: 8px 16px;
+  }
+}
+
+/* 2. 高度小於 620px 時的極致超緊湊適配 (筆電外接縮放 150%、小視窗) */
+@media (max-height: 620px) {
+  .screen {
+    padding: 8px 10px;
+  }
+  .welcome-card {
+    padding: 12px 16px;
+  }
+  .game-title {
+    font-size: 1.8rem;
+  }
+  .mascot-container {
+    display: none; /* 隱藏裝飾性吉祥物對話，優先釋放核心操作區 */
+  }
+  .ai-setup-card {
+    padding: 10px 14px !important;
+  }
+  .ai-setup-card .magic-badge {
+    display: none;
+  }
+  .ai-rules-card {
+    display: none; /* 隱藏文字說明，確保難度卡片與開始按鈕絕對可見 */
+  }
+  .conveyor-tug-war {
+    padding: 4px 8px;
+    margin-bottom: 4px;
+  }
+}
+
+/* 3. 寬度小於 768px 時的窄螢幕適配 (平板直式、小筆電視窗) */
+@media (max-width: 768px) {
+  #game-container {
+    width: 100vw;
+    border-radius: 0;
+  }
+  .screen {
+    padding: 12px;
+  }
+  .welcome-card,
+  .setup-card,
+  .level-select-card,
+  .ai-setup-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .ai-difficulty-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .ai-diff-card {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 8px 14px;
+    gap: 12px;
+    text-align: left;
+  }
+  .ai-diff-avatar {
+    margin: 0;
+  }
+  .ai-diff-desc {
+    text-align: left;
+  }
+  .dessert-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .dessert-btn {
+    width: 100%;
+    max-width: 280px;
+    height: 60px;
+    flex-direction: row;
+    gap: 16px;
+  }
+  .dessert-emoji {
+    font-size: 2.2rem;
+  }
+  .level-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
