@@ -653,22 +653,22 @@ const LEARN_QUESTIONS = [
     rightVal: 4/10,
     leftLabel: "6/10",
     rightLabel: "4/10",
-    leftVisual: "pizza-5/9",
-    rightVisual: "pizza-7/9",
+    leftVisual: "pizza-6/10",
+    rightVisual: "pizza-4/10",
     answer: ">",
     misconceptionSpeech: "不對喔！分母相同時，分子越大，分數就越大。十分之六是六個十分之一，比四個十分之一多，所以是大於！"
   },
   {
     type: "interactive-scale",
     desc: "一盒馬卡龍有 12 個。請比較大小： <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">7</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">12</span></span></span> 盒 與 5 顆馬卡龍。",
-    speechDesc: "一盒馬卡龍有 12 個. 請比較大小：十二分之七盒與 5 顆馬卡龍哪一個多？",
+    speechDesc: "一盒馬卡龍有 12 個。請比較大小：十二分之七盒與 5 顆馬卡龍哪一個多？",
     layout: "scale-discrete-compare",
     leftVal: 7/12,
     rightVal: 5/12,
     leftLabel: "7/12 盒",
     rightLabel: "5 顆",
-    leftVisual: "discrete-5",
-    rightVisual: "discrete-8",
+    leftVisual: "box-7/12",
+    rightVisual: "discrete-5",
     answer: ">",
     misconceptionSpeech: "想一想喔！一盒馬卡龍有十二個，十二分之七盒代表七個。七個比五個多，所以十二分之七盒大於五顆！"
   }
@@ -928,7 +928,7 @@ const BATTLE_QUESTIONS = [
       { id: "equal", text: "一樣多" }
     ],
     answer: "sister",
-    misconceptionSpeech: "想一想喔！十二分之四盒巧克力就是四顆. 姊姊拿了五顆，比四顆多，所以是姊姊比較多！"
+    misconceptionSpeech: "想一想喔！十二分之四盒巧克力就是四顆，姊姊拿了五顆，比四顆多，所以是姊姊比較多！"
   },
   {
     id: "BT20",
@@ -1025,8 +1025,8 @@ const BATTLE_QUESTIONS = [
     rightVal: 4/10,
     leftLabel: "6/10",
     rightLabel: "4/10",
-    leftVisual: "pizza-5/9", 
-    rightVisual: "pizza-7/9",
+    leftVisual: "pizza-6/10", 
+    rightVisual: "pizza-4/10",
     answer: ">",
     misconceptionSpeech: "不對喔！分母相同時，分子越大，分數就越大。十分之六是六個十分之一，比四個十分之一多，所以是大於！"
   },
@@ -1034,14 +1034,14 @@ const BATTLE_QUESTIONS = [
     id: "BT27",
     type: "interactive-scale",
     desc: "一盒馬卡龍有 12 個。請比較大小： <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">7</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">12</span></span></span> 盒 與 5 顆馬卡龍。",
-    speechDesc: "一盒馬卡龍有 12 個. 請比較大小：十二分之七盒與 5 顆馬卡龍哪一個多？",
+    speechDesc: "一盒馬卡龍有 12 個。請比較大小：十二分之七盒與 5 顆馬卡龍哪一個多？",
     layout: "scale-discrete-compare",
     leftVal: 7/12,
     rightVal: 5/12,
     leftLabel: "7/12 盒",
     rightLabel: "5 顆",
-    leftVisual: "discrete-5",
-    rightVisual: "discrete-8",
+    leftVisual: "box-7/12",
+    rightVisual: "discrete-5",
     answer: ">",
     misconceptionSpeech: "想一想喔！一盒馬卡龍有十二個，十二分之七盒代表七個。七個比五個多，所以十二分之七盒大於五顆！"
   },
@@ -1049,14 +1049,14 @@ const BATTLE_QUESTIONS = [
     id: "BT28",
     type: "interactive-scale",
     desc: "一盒杯子蛋糕有 10 個。請比較大小：1 盒 與 <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">9</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">10</span></span></span> 盒。",
-    speechDesc: "一盒杯子蛋糕有 10 個. 請比較大小：1 盒與十分之九盒哪一個多？",
+    speechDesc: "一盒杯子蛋糕有 10 個。請比較大小：1 盒與十分之九盒哪一個多？",
     layout: "scale-whole-compare",
     leftVal: 1.0,
     rightVal: 9/10,
     leftLabel: "1 盒",
     rightLabel: "9/10 盒",
     leftVisual: "whole-1",
-    rightVisual: "discrete-10",
+    rightVisual: "box-9/10",
     answer: ">",
     misconceptionSpeech: "答錯囉！一盒是十個，十分之九盒代表九個。十個比九個多，所以一盒大於十分之九盒！"
   },
@@ -1070,8 +1070,8 @@ const BATTLE_QUESTIONS = [
     rightVal: 5/8,
     leftLabel: "3/8",
     rightLabel: "5/8",
-    leftVisual: "pizza-5/9",
-    rightVisual: "pizza-7/9",
+    leftVisual: "pizza-3/8",
+    rightVisual: "pizza-5/8",
     answer: "<",
     misconceptionSpeech: "分母都是八，分子大的分數比較大。八分之三是三個，八分之五是五個，所以八分之三小於八分之五！"
   },
@@ -1079,14 +1079,14 @@ const BATTLE_QUESTIONS = [
     id: "BT30",
     type: "interactive-scale",
     desc: "一盒巧克力有 8 顆。請比較大小： <span class=\"fraction\"><span class=\"frac-row\"><span class=\"frac-cell frac-num\">4</span></span><span class=\"frac-row\"><span class=\"frac-cell frac-den\">8</span></span></span> 盒 與 4 顆巧克力。",
-    speechDesc: "一盒巧克力有 8 顆. 請比較大小：八分之四盒與 4 顆巧克力哪一個多？",
+    speechDesc: "一盒巧克力有 8 顆。請比較大小：八分之四盒與 4 顆巧克力哪一個多？",
     layout: "scale-discrete-compare",
     leftVal: 4/8,
     rightVal: 4/8,
     leftLabel: "4/8 盒",
     rightLabel: "4 顆",
-    leftVisual: "discrete-5",
-    rightVisual: "discrete-8",
+    leftVisual: "box-4/8",
+    rightVisual: "discrete-4",
     answer: "=",
     misconceptionSpeech: "想一想喔！一盒巧克力有八顆，八分之四盒巧克力就是把八顆平分八等份，取其中的四份，剛好就是四顆，所以是一樣多的！"
   }
@@ -4390,41 +4390,44 @@ const GameApp = {
     divA.appendChild(boxA);
     divA.appendChild(lblA);
 
-    // 姊姊拿了 5 顆（盤子中裝 5 顆）
+    // 姊姊拿了 5 顆（點心盤中盛裝 5 顆散裝巧克力，不使用 6 格盒子避免誤導）
     const divB = document.createElement('div');
     divB.style.textAlign = 'center';
     
-    const boxB = document.createElement('div');
-    boxB.className = 'l2-box';
-    boxB.style.gridTemplateColumns = 'repeat(3, 1fr)';
-    boxB.style.width = '140px';
-    boxB.style.padding = '8px';
-    boxB.style.gap = '5px';
-    boxB.style.height = '105px';
-    boxB.style.background = '#fff8eb';
-    boxB.style.border = '2px solid #8b4513';
-    boxB.style.borderRadius = '12px';
-    boxB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
+    const plateB = document.createElement('div');
+    plateB.style.width = '140px';
+    plateB.style.height = '105px';
+    plateB.style.padding = '8px';
+    plateB.style.background = '#fffcf5';
+    plateB.style.border = '2.5px solid #c47d2b';
+    plateB.style.borderRadius = '18px';
+    plateB.style.boxShadow = '0 4px 12px rgba(139, 69, 19, 0.12)';
+    plateB.style.display = 'flex';
+    plateB.style.flexWrap = 'wrap';
+    plateB.style.justifyContent = 'center';
+    plateB.style.alignItems = 'center';
+    plateB.style.gap = '8px';
+    plateB.style.boxSizing = 'border-box';
 
-    for (let i = 0; i < 6; i++) {
-      const slot = document.createElement('div');
-      slot.style.display = 'flex';
-      slot.style.alignItems = 'center';
-      slot.style.justifyContent = 'center';
-      slot.style.borderRadius = '6px';
-      slot.style.background = i < 5 ? 'rgba(214, 62, 138, 0.2)' : 'transparent';
-      slot.style.border = i < 5 ? '1.5px solid #d63e8a' : 'none';
-      if (i < 5) {
-        slot.textContent = '🍫';
-        slot.style.fontSize = '1.05rem';
-      }
-      boxB.appendChild(slot);
+    for (let i = 0; i < 5; i++) {
+      const item = document.createElement('div');
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'center';
+      item.style.width = '34px';
+      item.style.height = '34px';
+      item.style.borderRadius = '8px';
+      item.style.background = 'rgba(255, 184, 0, 0.18)';
+      item.style.border = '1.5px solid #d63e8a';
+      item.textContent = '🍫';
+      item.style.fontSize = '1.25rem';
+      plateB.appendChild(item);
     }
     const lblB = document.createElement('div');
     lblB.style.marginTop = '8px';
     lblB.style.fontWeight = '700';
-    lblB.innerHTML = '姊姊：<strong>5 顆</strong>';
-    divB.appendChild(boxB);
+    lblB.innerHTML = '姊姊：<strong>5 顆</strong>（散裝）';
+    divB.appendChild(plateB);
     divB.appendChild(lblB);
 
     visualArea.appendChild(divA);
@@ -4686,8 +4689,8 @@ const GameApp = {
     container.className = 'level2-container';
 
     const q = GameState.getCurrentQuestion();
-    const itemsCount = q.id === 'BT12' ? 10 : 12;
-    const emoji = q.id === 'BT12' ? '🍬' : '🧁';
+    const itemsCount = q.total || (q.desc && (q.desc.includes('10 顆') || q.desc.includes('10 個'))) ? 10 : 12;
+    const emoji = (q.desc && q.desc.includes('糖果')) ? '🍬' : '🧁';
 
     const box = document.createElement('div');
     box.className = 'l2-box';
@@ -4749,7 +4752,7 @@ const GameApp = {
     container.appendChild(box);
 
     // 提案 3：點選即時計數膠囊（垂直分數格式，單位為盒）
-    const unitItem = q.id === 'BT12' ? '顆' : '個';
+    const unitItem = (q.desc && (q.desc.includes('糖果') || q.desc.includes('顆'))) ? '顆' : '個';
     const counterPill = document.createElement('div');
     counterPill.className = 'l2-counter-pill';
     counterPill.innerHTML = `已點選放入：<span class="fraction"><span class="frac-row"><span class="frac-cell frac-num l2-frac-num">0</span></span><span class="frac-row"><span class="frac-cell frac-den">${itemsCount}</span></span></span> 盒（共 <strong class="l2-count-num">0</strong> ${unitItem}）`;
@@ -5003,7 +5006,8 @@ const GameApp = {
       }
 
       const wholeLabel = document.createElement('div');
-      wholeLabel.innerHTML = `完整的第一個單位：<span style="color:#d63e8a; font-weight:900;">1</span> ${unit}`;
+      const unitDisplay = unit ? unit : '個單位';
+      wholeLabel.innerHTML = `完整的 1 ${unitDisplay}：<span style="color:#d63e8a; font-weight:900;">1</span> ${unit}`;
       wholeBox.appendChild(wholeBar);
       wholeBox.appendChild(wholeLabel);
 
@@ -5299,7 +5303,7 @@ const GameApp = {
       const parts = Math.round(q.rightVal * lTotal);
       this.drawPizzaOnCanvas(canvas, parts, lTotal);
       rightVisual.appendChild(canvas);
-    } else if (q.rightVisual === 'discrete-10' || (q.rightLabel && q.rightLabel.includes('盒'))) {
+    } else if ((q.rightLabel && q.rightLabel.includes('盒')) || (q.rightVisual && (q.rightVisual.startsWith('box-') || q.rightVisual === 'discrete-10'))) {
       const canvas = document.createElement('canvas');
       canvas.width = 100; canvas.height = 64;
       const parts = Math.round(q.rightVal * lTotal);
@@ -6483,8 +6487,8 @@ const LEVEL_CONFIGS = [
         rightVal: 6/12,
         leftLabel: "8/12 盒",
         rightLabel: "6 顆",
-        leftVisual: "discrete-5",
-        rightVisual: "discrete-8",
+        leftVisual: "box-8/12",
+        rightVisual: "discrete-6",
         answer: ">",
         misconceptionSpeech: "答錯囉！一盒有十二顆，十二分之八盒代表八顆。八顆比六顆多，所以十二分之八盒大於六顆！"
       },
@@ -6497,8 +6501,8 @@ const LEVEL_CONFIGS = [
         rightVal: 5/10,
         leftLabel: "3/10 盒",
         rightLabel: "5 顆",
-        leftVisual: "discrete-5",
-        rightVisual: "discrete-8",
+        leftVisual: "box-3/10",
+        rightVisual: "discrete-5",
         answer: "<",
         misconceptionSpeech: "答錯囉！一盒有十顆，十分之三盒代表三顆。三顆比五顆少，所以十分之三盒小於五顆！"
       },
@@ -6512,7 +6516,7 @@ const LEVEL_CONFIGS = [
         leftLabel: "1 盒",
         rightLabel: "12/12 盒",
         leftVisual: "whole-1",
-        rightVisual: "discrete-10",
+        rightVisual: "box-12/12",
         answer: "=",
         misconceptionSpeech: "答錯囉！十二分之十二盒代表十二顆，也就是完整的一盒。所以 1 盒等於十二分之十二盒！"
       },
@@ -6526,7 +6530,7 @@ const LEVEL_CONFIGS = [
         leftLabel: "1 盒",
         rightLabel: "8/10 盒",
         leftVisual: "whole-1",
-        rightVisual: "discrete-10",
+        rightVisual: "box-8/10",
         answer: ">",
         misconceptionSpeech: "答錯囉！一盒有十顆，十分之八盒代表八顆。十顆比八顆多，所以一盒大於十分之八盒！"
       },
@@ -6540,7 +6544,7 @@ const LEVEL_CONFIGS = [
         leftLabel: "1 盒",
         rightLabel: "6/6 盒",
         leftVisual: "whole-1",
-        rightVisual: "discrete-10",
+        rightVisual: "box-6/6",
         answer: "=",
         misconceptionSpeech: "答錯囉！六分之六盒代表六顆，也就是整盒。所以 1 盒等於六分之六盒！"
       }
