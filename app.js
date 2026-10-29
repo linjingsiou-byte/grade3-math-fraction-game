@@ -4592,7 +4592,11 @@ const GameApp = {
 
       ctx.fillStyle = '#ffebad';
       ctx.beginPath();
-      ctx.ellipse(x, y + h/2, 6, h/2, 0, 0, Math.PI * 2);
+      if (ctx.ellipse) {
+        ctx.ellipse(x, y + h/2, 6, h/2, 0, 0, Math.PI * 2);
+      } else {
+        ctx.arc(x, y + h/2, 6, 0, Math.PI * 2);
+      }
       ctx.fill();
       ctx.stroke();
 
@@ -4689,7 +4693,7 @@ const GameApp = {
     container.className = 'level2-container';
 
     const q = GameState.getCurrentQuestion();
-    const itemsCount = q.total || (q.desc && (q.desc.includes('10 顆') || q.desc.includes('10 個'))) ? 10 : 12;
+    const itemsCount = q.total ? q.total : ((q.desc && (q.desc.includes('10 顆') || q.desc.includes('10 個'))) ? 10 : 12);
     const emoji = (q.desc && q.desc.includes('糖果')) ? '🍬' : '🧁';
 
     const box = document.createElement('div');
@@ -4902,8 +4906,13 @@ const GameApp = {
         dropzone.innerHTML = '?';
 
         // 支援點選目標圈直接放置（Tap-to-Place）
+        let lastZoneClickTime = 0;
         const handleZoneClick = (e) => {
           e.stopPropagation();
+          const now = Date.now();
+          if (now - lastZoneClickTime < 350) return;
+          lastZoneClickTime = now;
+
           const selectedPlate = document.querySelector('.l3-plate.selected:not(.placed)');
           if (selectedPlate && typeof this.placePlateInZone === 'function') {
             this.placePlateInZone(selectedPlate, dropzone, belt);
@@ -5333,7 +5342,7 @@ const GameApp = {
   },
 
   formatFractionText(str) {
-    if (!str.includes('/')) return str;
+    if (!str || typeof str !== 'string' || !str.includes('/')) return str || '';
     const parts = str.split(' ');
     const fracPart = parts[0];
     const unitPart = parts[1] || '';
@@ -5405,10 +5414,23 @@ const GameApp = {
     const h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
+    const safeRoundRect = (x, y, width, height, radius) => {
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, width, height, radius);
+      } else {
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + width, y, x + width, y + height, radius);
+        ctx.arcTo(x + width, y + height, x, y + height, radius);
+        ctx.arcTo(x, y + height, x, y, radius);
+        ctx.arcTo(x, y, x + width, y, radius);
+        ctx.closePath();
+      }
+    };
+
     // 1. 溫暖焦糖實體禮盒盒身（對齊第二關烘焙木盒質感）
     const bx = 3, by = 3, bw = w - 6, bh = h - 6, br = 6;
     ctx.beginPath();
-    ctx.roundRect(bx, by, bw, bh, br);
+    safeRoundRect(bx, by, bw, bh, br);
     ctx.fillStyle = '#fff9f0';
     ctx.fill();
     ctx.strokeStyle = '#8B4513';
@@ -5417,7 +5439,7 @@ const GameApp = {
 
     // 內層細線
     ctx.beginPath();
-    ctx.roundRect(bx + 2, by + 2, bw - 4, bh - 4, br - 1);
+    safeRoundRect(bx + 2, by + 2, bw - 4, bh - 4, br - 1);
     ctx.strokeStyle = 'rgba(196, 125, 43, 0.35)';
     ctx.lineWidth = 1;
     ctx.stroke();
